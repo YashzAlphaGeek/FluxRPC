@@ -63,4 +63,7 @@ If you want to learn more about building native executables, please consult <htt
 Create your first gRPC service
 
 [Related guide section...](https://quarkus.io/guides/grpc-getting-started)
+
+<img width="1112" height="251" alt="image" src="https://github.com/user-attachments/assets/6a897010-f944-4661-a37f-8af1b2dc889a" />
+
 # FluxRPC
