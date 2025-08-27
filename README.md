@@ -68,5 +68,8 @@ Create your first gRPC service
 
 # FluxRPC
 
+<img width="1100" height="260" alt="image" src="https://github.com/user-attachments/assets/74ef603b-f11c-4aa6-bb75-b532c29c93ff" />
+
+
 <img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/59da0e97-87a4-45e8-8ad4-110d8eeda69d" />
 
