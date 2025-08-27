@@ -1,9 +1,9 @@
 package com.fluxrpc.grpc;
 
 import io.grpc.stub.StreamObserver;
-import jakarta.inject.Singleton;
+import io.quarkus.grpc.GrpcService;
 
-@Singleton
+@GrpcService
 public class DemoServiceImpl extends DemoServiceGrpc.DemoServiceImplBase {
 
     @Override
