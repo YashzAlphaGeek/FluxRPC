@@ -1,0 +1,7 @@
+version: v1
+plugins:
+  - name: grpc-web
+    out: src/grpc
+    opt:
+      - import_style=typescript
+      - mode=grpcweb
