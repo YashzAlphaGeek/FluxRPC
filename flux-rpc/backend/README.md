@@ -148,6 +148,8 @@ protoc -I=src/main/proto \
 
 ---
 
+![gPRC](https://github.com/user-attachments/assets/c8714546-fe00-4648-a32a-9bac28725c99)
+
 ## References
 
 - [Quarkus gRPC Guide](https://quarkus.io/guides/grpc)
