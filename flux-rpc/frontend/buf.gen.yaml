@@ -1,7 +1,10 @@
 version: v1
 plugins:
+  - name: js
+    out: src/grpc
+    opt:
+      - import_style=commonjs
   - name: grpc-web
     out: src/grpc
     opt:
-      - import_style=typescript
-      - mode=grpcweb
+      - import_style=typescript,mode=grpcweb
