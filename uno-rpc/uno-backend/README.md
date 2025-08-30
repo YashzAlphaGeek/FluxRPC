@@ -12,7 +12,6 @@ UNO-RPC with **gRPC** for high-performance, bi-directional communication between
 - **Join Game (Unary RPC):** Players join sessions with unique IDs.
 - **Play Card (BiDi Streaming):** Players send moves in real-time; the server broadcasts updates to opponents.
 - **Game State (Server Streaming):** Clients receive continuous updates about the game state (cards on table, current player, etc.).
-- **Web3 Logging (Optional):** Game outcomes can be recorded on blockchain for verifiable history.
 
 ---
 
@@ -21,7 +20,6 @@ UNO-RPC with **gRPC** for high-performance, bi-directional communication between
 - **Communication:** gRPC + Protocol Buffers
 - **Database:** H2 (for MVP), PostgreSQL optional
 - **Frontend:** React / Angular (optional, gRPC-Web)
-- **Blockchain:** Ethereum/Polygon (optional Web3 integration)
 
 ---
 
@@ -55,19 +53,24 @@ classDiagram
     }
 
     class UserService {
-        -Map<String, User> users
+        -Map<String, Player> users
         +registerUser(name)
-        +authenticateWallet(walletAddress)
+        +findPlayer(playerId)
     }
 
-    class Web3Service {
-        +logWinner(gameId, playerId)
-        +verifyTransaction(txId)
+    class GameSession {
+        -String gameId
+        -List<Player> players
+        -List<Card> deck
+        -Card topCard
+        -String currentPlayerId
     }
 
     UnoServiceImpl --> GameService : uses
     UnoServiceImpl --> UserService : uses
-    UnoServiceImpl --> Web3Service : optional
+    GameService --> GameSession : manages
+    GameSession --> Player : contains
+    GameSession --> Card : uses
 ```
 
 ---
