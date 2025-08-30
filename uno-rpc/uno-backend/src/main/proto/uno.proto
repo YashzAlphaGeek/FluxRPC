@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.unogame.backend.grpc";
+option java_outer_classname = "UnoProto";
+
+service UnoService {
+    rpc JoinGame (JoinRequest) returns (JoinResponse);
+    rpc PlayCard (stream PlayRequest) returns (stream PlayResponse);
+    rpc GameState (GameStateRequest) returns (stream GameStateResponse);
+}
+
+message JoinRequest {
+    string playerName = 1;
+}
+
+message JoinResponse {
+    string message = 1;
+    string playerId = 2;
+}
+
+message PlayRequest {
+    string playerId = 1;
+    string card = 2;
+}
+
+message PlayResponse {
+    string message = 1;
+    string nextPlayerId = 2;
+}
+
+message GameStateRequest {
+    string gameId = 1;
+}
+
+message GameStateResponse {
+    string gameId = 1;
+    repeated string players = 2;
+    repeated string cardsOnTable = 3;
+    string currentPlayerId = 4;
+}

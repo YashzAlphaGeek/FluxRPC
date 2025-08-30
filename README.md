@@ -37,3 +37,34 @@ flowchart TD
     %% BiDi Streaming
     A4 --> I --> S1 --> S1BD --> I --> A4
 ```
+
+# UNO-RPC: Multiplayer Turn-Based Game with gRPC
+
+The flow of gRPC calls in UNO-RPC—Unary (Join Game), Server Streaming (Game State), and BiDi Streaming (Play Card)—through the backend services to the clients.
+
+```mermaid
+%% UNO-RPC gRPC Call Flow
+
+flowchart TD
+    subgraph Client
+        C1[Join Game Request]
+        C2[Play Card Stream]
+        C3[Request Game State]
+    end
+
+    subgraph Server
+        S1[UnoServiceImpl]
+        S1Join[Join Response]
+        S1Play[Play Response Stream]
+        S1State[Game State Stream]
+    end
+
+    %% Join Game (Unary)
+    C1 --> S1 --> S1Join --> C1
+
+    %% Play Card (BiDi Streaming)
+    C2 --> S1 --> S1Play --> C2
+
+    %% Game State (Server Streaming)
+    C3 --> S1 --> S1State --> C3
+```
