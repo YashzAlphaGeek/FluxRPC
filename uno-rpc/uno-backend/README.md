@@ -119,26 +119,45 @@ sequenceDiagram
     participant Server
     participant DB
 
-    %% Players joining
-    loop Players Join Game
-        Player->>Server: joinGame(JoinRequest)
-        Server->>DB: createGame or find GameSession
-        DB-->>Server: GameSession saved/found
-        Server-->>Player: JoinResponse(gameId, playerId, players list)
+    %% Players join game
+    loop Player1 joins
+        Player1->>Server: joinGame(JoinRequest)
+        Server->>DB: createGame(Player1)
+        DB-->>Server: GameSession saved
+        Server-->>Player1: JoinResponse(gameId, playerId, players list)
+    end
+
+    loop Player2 joins
+        Player2->>Server: joinGame(JoinRequest with gameId)
+        Server->>DB: find GameSession by gameId
+        DB-->>Server: GameSession found
+        Server->>DB: addPlayer(Player2)
+        DB-->>Server: updated GameSession
+        Server-->>Player2: JoinResponse(gameId, playerId, players list)
     end
 
     %% Players subscribe to game state
-    loop Subscribe to Game State
-        Player->>Server: gameState(GameStateRequest)
-        Server-->>Player: GameStateResponse(initial state)
+    loop Subscribe
+        Player1->>Server: gameState(GameStateRequest)
+        Server-->>Player1: GameStateResponse(initial state)
+
+        Player2->>Server: gameState(GameStateRequest)
+        Server-->>Player2: GameStateResponse(initial state)
     end
 
     %% Players play cards in turns
-    loop Player Turn
-        Player->>Server: playCard(PlayRequest(card))
+    loop Turns
+        Player1->>Server: playCard(PlayRequest(card))
         Server->>DB: update GameSession with card
         DB-->>Server: updated GameSession
-        Server-->>Player: PlayResponse(result)
+        Server-->>Player1: PlayResponse(result)
+        Server-->>Player1: GameStateResponse(updated state)
+        Server-->>Player2: GameStateResponse(updated state)
+
+        Player2->>Server: playCard(PlayRequest(card))
+        Server->>DB: update GameSession with card
+        DB-->>Server: updated GameSession
+        Server-->>Player2: PlayResponse(result)
         Server-->>Player1: GameStateResponse(updated state)
         Server-->>Player2: GameStateResponse(updated state)
     end
