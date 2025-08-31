@@ -43,6 +43,24 @@ flowchart TD
 The flow of gRPC calls in UNO-RPC—Unary (Join Game), Server Streaming (Game State), and BiDi Streaming (Play Card)—through the backend services to the clients.
 
 ```mermaid
+sequenceDiagram
+    participant Player as User (Player in Browser)
+    participant Frontend as React App
+    participant Envoy as Envoy Proxy
+    participant Backend as Uno Game Service
+
+    Player->>Frontend: Clicks "Join Game" / "Play Card"
+    Frontend->>Envoy: Sends gRPC-Web call
+    Envoy->>Backend: Forwards as native gRPC
+    Backend-->>Envoy: Game logic response (next player, card validation, etc.)
+    Envoy-->>Frontend: Translates to gRPC-Web
+    Frontend-->>Player: Updates UI (turn, cards, state)
+
+    Note over Backend: Central game logic & state management  
+    Note over Envoy: Acts as bridge between Browser and Backend
+```
+
+```mermaid
 %% UNO-RPC gRPC Call Flow
 
 flowchart TD

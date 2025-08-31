@@ -1,69 +1,55 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { UnoServiceClient } from '../grpc/uno_grpc_web_pb';
 import { PlayRequest, GameStateRequest } from '../grpc/uno_pb';
 
-const client = new UnoServiceClient('http://localhost:8081');
+const client = new UnoServiceClient('/');
 
 const GameBoard = ({ gameId, playerId }) => {
   const [cardsOnTable, setCardsOnTable] = useState([]);
   const [players, setPlayers] = useState([]);
   const [currentPlayer, setCurrentPlayer] = useState('');
-  const playStreamRef = useRef(null);
 
-  // Subscribe to game state updates
+  // Subscribe to game state updates (server streaming)
   useEffect(() => {
     if (!gameId) return;
 
     const stateReq = new GameStateRequest();
-    stateReq.setGameId(gameId);
+    stateReq.setGameid(gameId);
 
     const stateStream = client.gameState(stateReq, {});
 
     stateStream.on('data', (resp) => {
       const state = resp.toObject();
-      setCardsOnTable(state.cardsOnTableList);
-      setPlayers(state.playersList);
-      setCurrentPlayer(state.currentPlayerId);
+      setCardsOnTable(state.cardsontableList || []);
+      setPlayers(state.playersList || []);
+      setCurrentPlayer(state.currentplayerid || '');
     });
 
-    stateStream.on('error', (err) => console.error('GameState stream error:', err));
+    stateStream.on('error', (err) => console.error(err));
     stateStream.on('end', () => console.log('GameState stream ended'));
 
     return () => stateStream.cancel();
   }, [gameId]);
 
-  // Initialize bidirectional PlayCard stream
-  useEffect(() => {
-    if (!gameId || !playerId) return;
-
-    playStreamRef.current = client.playCard({}, {});
-
-    playStreamRef.current.on('data', (resp) => {
-      console.log('PlayCard response:', resp.toObject());
-    });
-
-    playStreamRef.current.on('error', (err) => console.error('PlayCard stream error:', err));
-    playStreamRef.current.on('end', () => console.log('PlayCard stream ended'));
-
-    return () => {
-      if (playStreamRef.current) playStreamRef.current.cancel();
-    };
-  }, [gameId, playerId]);
-
+  // Play a card (unary RPC)
   const playCard = (card) => {
-    if (!playStreamRef.current) return;
-
     if (currentPlayer !== playerId) {
       alert("It's not your turn!");
       return;
     }
 
     const req = new PlayRequest();
-    req.setGameId(gameId);
-    req.setPlayerId(playerId);
+    req.setGameid(gameId);
+    req.setPlayerid(playerId);
     req.setCard(card);
 
-    playStreamRef.current.write(req);
+    client.play(req, {}, (err, resp) => {
+      if (err) {
+        console.error('Play error:', err.message);
+        return;
+      }
+      console.log('Play response:', resp.toObject());
+    });
   };
 
   const isMyTurn = currentPlayer === playerId;
