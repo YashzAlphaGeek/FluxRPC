@@ -1,6 +1,6 @@
 # UNO-RPC
 
-**A turn-based multiplayer UNO game using gRPC for real-time gameplay and optional Web3 logging.**
+**A turn-based multiplayer UNO game using gRPC for real-time gameplay**
 
 ---
 
@@ -153,6 +153,7 @@ sequenceDiagram
 ```bash
 mvn clean install
 mvn spring-boot:run
+taskkill /F /IM java.exe (if required to kill any running java.exe as protoc gets locked)
 ```
 ---
 
