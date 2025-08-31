@@ -1,66 +1,83 @@
 package com.unogame.uno_backend.service;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.unogame.uno_backend.model.GameSession;
+import com.unogame.uno_backend.model.GameSession.PlayResult;
 import com.unogame.uno_backend.model.Player;
+import com.unogame.uno_backend.repository.GameSessionRepository;
+
+import jakarta.transaction.Transactional;
 
 @Service
 public class GameService {
 
-    private final Map<String, GameSession> sessions = new HashMap<>();
+    private final GameSessionRepository gameSessionRepository;
 
-    /**
-     * Creates a new game session and adds the first player.
-     */
+
+    @Autowired
+    public GameService(GameSessionRepository gameSessionRepository) {
+        this.gameSessionRepository = gameSessionRepository;
+    }
+
+    @Transactional
     public String createGame(Player player) {
         String gameId = UUID.randomUUID().toString();
-        GameSession session = new GameSession(gameId, new ArrayList<>());
+        GameSession session = new GameSession(gameId);
         session.addPlayer(player.getPlayerId());
-        sessions.put(gameId, session);
+        gameSessionRepository.saveAndFlush(session);
         return gameId;
     }
 
-    /**
-     * Processes a player's card play and returns the next player's ID.
-     */
-    public String playCard(String playerId, String card) {
-        for (GameSession session : sessions.values()) {
-            if (session.hasPlayer(playerId)) {
-                return session.playCard(playerId, card);
-            }
+    @Transactional
+    public JoinResult joinExistingGame(String gameId, Player player) {
+        GameSession session = gameSessionRepository.findById(gameId).orElse(null);
+        if (session == null) return null;
+
+        boolean alreadyJoined = session.hasPlayer(player.getPlayerId());
+        if (!alreadyJoined) {
+            session.addPlayer(player.getPlayerId());
+            gameSessionRepository.saveAndFlush(session); 
         }
-        return null;
+
+        return new JoinResult(session.getGameId(), alreadyJoined);
     }
 
-    /**
-     * Returns a list of player IDs in the game session.
-     */
+    @Transactional
+    public PlayResult playCard(String gameId, String playerId, String card) {
+        GameSession session = gameSessionRepository.findById(gameId).orElse(null);
+        if (session != null) {
+            PlayResult result = session.playCard(playerId, card);
+            gameSessionRepository.saveAndFlush(session); 
+            return result;
+        }
+        return new PlayResult(null, PlayResult.Status.INVALID_PLAYER);
+    }
+
     public List<String> getPlayersInGame(String gameId) {
-        GameSession session = sessions.get(gameId);
-        return session != null ? session.getPlayers() : Collections.emptyList();
+        return gameSessionRepository.findById(gameId)
+                .map(GameSession::getPlayers)
+                .orElse(Collections.emptyList());
     }
 
-    /**
-     * Returns the cards currently on the table for the game session.
-     */
     public List<String> getCardsOnTable(String gameId) {
-        GameSession session = sessions.get(gameId);
+        GameSession session = gameSessionRepository.findById(gameId).orElse(null);
         return session != null ? session.getCardsOnTable() : Collections.emptyList();
+
     }
 
-    /**
-     * Returns the current player's ID for the game session.
-     */
     public String getCurrentPlayerId(String gameId) {
-        GameSession session = sessions.get(gameId);
-        return session != null ? session.getCurrentPlayerId() : null;
+        return gameSessionRepository.findById(gameId)
+                .map(GameSession::getCurrentPlayerId)
+                .orElse(null);
     }
+
+    public record JoinResult(String gameId, boolean alreadyJoined) {
+    }
+
 }

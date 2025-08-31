@@ -5,28 +5,33 @@ option java_package = "com.unogame.uno_backend.grpc";
 option java_outer_classname = "UnoProto";
 
 service UnoService {
-    rpc JoinGame (JoinRequest) returns (JoinResponse);
-    rpc PlayCard (stream PlayRequest) returns (stream PlayResponse);
-    rpc GameState (GameStateRequest) returns (stream GameStateResponse);
+    rpc JoinGame(JoinRequest) returns (JoinResponse);
+    rpc PlayCard(stream PlayRequest) returns (stream PlayResponse);
+    rpc GameState(GameStateRequest) returns (stream GameStateResponse);
 }
 
 message JoinRequest {
     string playerName = 1;
+    string gameId = 2;
 }
 
 message JoinResponse {
-    string message = 1;
-    string playerId = 2;
+    string playerId = 1;
+    string gameId = 2;
+    repeated string players = 3;
+    string message = 4;
 }
 
 message PlayRequest {
-    string playerId = 1;
-    string card = 2;
+    string gameId = 1;
+    string playerId = 2;
+    string card = 3;
 }
 
 message PlayResponse {
     string message = 1;
     string nextPlayerId = 2;
+    PlayStatus status = 3;
 }
 
 message GameStateRequest {
@@ -38,4 +43,11 @@ message GameStateResponse {
     repeated string players = 2;
     repeated string cardsOnTable = 3;
     string currentPlayerId = 4;
+}
+
+enum PlayStatus {
+    OK = 0;
+    INVALID_TURN = 1;
+    INVALID_PLAYER = 2;
+    GAME_NOT_FOUND = 3;
 }

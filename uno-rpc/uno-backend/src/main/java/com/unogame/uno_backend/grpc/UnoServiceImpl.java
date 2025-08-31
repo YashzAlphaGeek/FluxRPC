@@ -3,11 +3,13 @@ package com.unogame.uno_backend.grpc;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.unogame.uno_backend.model.GameSession.PlayResult;
 import com.unogame.uno_backend.model.Player;
 import com.unogame.uno_backend.service.GameService;
 import com.unogame.uno_backend.service.UserService;
@@ -16,9 +18,6 @@ import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import net.devh.boot.grpc.server.service.GrpcService;
 
-/**
- * gRPC implementation of the UnoService defined in uno.proto
- */
 @GrpcService
 public class UnoServiceImpl extends UnoServiceGrpc.UnoServiceImplBase {
 
@@ -27,8 +26,7 @@ public class UnoServiceImpl extends UnoServiceGrpc.UnoServiceImplBase {
     private final GameService gameService;
     private final UserService userService;
 
-    // Keeps track of connected players (in-memory for now)
-    private final Map<String, Player> players = new ConcurrentHashMap<>();
+    private final Map<String, List<StreamObserver<GameStateResponse>>> gameStateObservers = new ConcurrentHashMap<>();
 
     @Autowired
     public UnoServiceImpl(GameService gameService, UserService userService) {
@@ -36,59 +34,79 @@ public class UnoServiceImpl extends UnoServiceGrpc.UnoServiceImplBase {
         this.userService = userService;
     }
 
-    /**
-     * Unary RPC - Player joins a game session.
-     */
     @Override
     public void joinGame(JoinRequest request, StreamObserver<JoinResponse> responseObserver) {
         if (request.getPlayerName() == null || request.getPlayerName().isEmpty()) {
-            responseObserver.onError(
-                    Status.INVALID_ARGUMENT
-                            .withDescription("Player name cannot be empty")
-                            .asRuntimeException()
-            );
+            responseObserver.onError(Status.INVALID_ARGUMENT
+                    .withDescription("Player name cannot be empty")
+                    .asRuntimeException());
             return;
         }
 
         Player player = userService.registerUser(request.getPlayerName());
-        players.put(player.getPlayerId(), player);
+
+        String gameId;
+        boolean alreadyJoined = false;
+
+        if (request.getGameId() == null || request.getGameId().isEmpty()) {
+            gameId = gameService.createGame(player);
+        } else {
+            GameService.JoinResult result = gameService.joinExistingGame(request.getGameId(), player);
+            if (result == null) {
+                responseObserver.onError(Status.NOT_FOUND
+                        .withDescription("Game ID not found")
+                        .asRuntimeException());
+                return;
+            }
+            gameId = result.gameId();
+            alreadyJoined = result.alreadyJoined();
+        }
+
+        List<String> currentPlayers = gameService.getPlayersInGame(gameId);
 
         JoinResponse response = JoinResponse.newBuilder()
-                .setMessage("Joined successfully!")
+                .setMessage(alreadyJoined ? "Already joined this game!" : "Joined successfully!")
                 .setPlayerId(player.getPlayerId())
+                .setGameId(gameId)
+                .addAllPlayers(currentPlayers)
                 .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
-        logger.info("Player {} joined the game.", player.getName());
+
+        logger.info("Player {} {} game {}",
+                player.getName(),
+                alreadyJoined ? "rejoined" : "joined",
+                gameId);
     }
 
-    /**
-     * BiDi Streaming RPC - Players play cards and server broadcasts next player turn.
-     */
     @Override
     public StreamObserver<PlayRequest> playCard(StreamObserver<PlayResponse> responseObserver) {
         return new StreamObserver<>() {
             @Override
             public void onNext(PlayRequest request) {
-                if (request.getPlayerId().isEmpty() || request.getCard().isEmpty()) {
-                    responseObserver.onError(
-                            Status.INVALID_ARGUMENT
-                                    .withDescription("Player ID and card must be provided")
-                                    .asRuntimeException()
-                    );
+                if (request.getGameId() == null || request.getGameId().isEmpty()
+                        || request.getPlayerId().isEmpty()
+                        || request.getCard().isEmpty()) {
+                    responseObserver.onError(Status.INVALID_ARGUMENT
+                            .withDescription("Game ID, Player ID, and Card must be provided")
+                            .asRuntimeException());
                     return;
                 }
 
-                String nextPlayerId = gameService.playCard(request.getPlayerId(), request.getCard());
+                PlayResult result = gameService.playCard(
+                        request.getGameId(), request.getPlayerId(), request.getCard());
 
                 PlayResponse response = PlayResponse.newBuilder()
                         .setMessage(request.getPlayerId() + " played " + request.getCard())
-                        .setNextPlayerId(nextPlayerId == null ? "" : nextPlayerId)
+                        .setNextPlayerId(result.getNextPlayerId() == null ? "" : result.getNextPlayerId())
+                        .setStatus(mapStatus(result.getStatus()))
                         .build();
 
                 responseObserver.onNext(response);
-                logger.info("Player {} played card {}. Next player: {}", request.getPlayerId(), request.getCard(), nextPlayerId);
+
+                // broadcast updated game state after flush
+                broadcastGameState(request.getGameId());
             }
 
             @Override
@@ -99,42 +117,48 @@ public class UnoServiceImpl extends UnoServiceGrpc.UnoServiceImplBase {
             @Override
             public void onCompleted() {
                 responseObserver.onCompleted();
-                logger.info("playCard stream completed.");
             }
         };
     }
 
-    /**
-     * Server Streaming RPC - Stream game state updates for a given game session.
-     */
     @Override
     public void gameState(GameStateRequest request, StreamObserver<GameStateResponse> responseObserver) {
-        if (request.getGameId() == null || request.getGameId().isEmpty()) {
-            responseObserver.onError(
-                    Status.INVALID_ARGUMENT
-                            .withDescription("Game ID cannot be empty")
-                            .asRuntimeException()
-            );
-            return;
-        }
+        String gameId = request.getGameId();
+        gameStateObservers.computeIfAbsent(gameId, k -> new CopyOnWriteArrayList<>()).add(responseObserver);
 
-        List<String> playersList = gameService.getPlayersInGame(request.getGameId());
-        List<String> cardsOnTable = gameService.getCardsOnTable(request.getGameId());
-        String currentPlayerId = gameService.getCurrentPlayerId(request.getGameId());
-
-        GameStateResponse response = GameStateResponse.newBuilder()
-                .setGameId(request.getGameId())
-                .addAllPlayers(playersList)
-                .addAllCardsOnTable(cardsOnTable)
-                .setCurrentPlayerId(currentPlayerId == null ? "" : currentPlayerId)
-                .build();
-
-        responseObserver.onNext(response);
-        responseObserver.onCompleted();
-        logger.info("Game state streamed for game {}", request.getGameId());
+        // send initial state immediately
+        sendGameStateToObserver(gameId, responseObserver);
     }
 
-    public Map<String, Player> getPlayers() {
-        return players;
+    private void sendGameStateToObserver(String gameId, StreamObserver<GameStateResponse> observer) {
+        List<String> players = gameService.getPlayersInGame(gameId);
+        List<String> cards = gameService.getCardsOnTable(gameId);
+        String currentPlayer = gameService.getCurrentPlayerId(gameId);
+
+        GameStateResponse state = GameStateResponse.newBuilder()
+                .setGameId(gameId)
+                .addAllPlayers(players)
+                .addAllCardsOnTable(cards)
+                .setCurrentPlayerId(currentPlayer != null ? currentPlayer : "")
+                .build();
+
+        observer.onNext(state);
+    }
+
+    private void broadcastGameState(String gameId) {
+        List<StreamObserver<GameStateResponse>> observers = gameStateObservers
+                .getOrDefault(gameId, List.of());
+        for (StreamObserver<GameStateResponse> observer : observers) {
+            sendGameStateToObserver(gameId, observer);
+        }
+    }
+
+    private PlayStatus mapStatus(PlayResult.Status status) {
+        return switch (status) {
+            case OK -> PlayStatus.OK;
+            case INVALID_TURN -> PlayStatus.INVALID_TURN;
+            case INVALID_PLAYER -> PlayStatus.INVALID_PLAYER;
+            default -> PlayStatus.GAME_NOT_FOUND;
+        };
     }
 }
