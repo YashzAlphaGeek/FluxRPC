@@ -148,6 +148,120 @@ sequenceDiagram
 ```
 ---
 
+## 1️⃣ Join Game
+
+**Request**
+
+```json
+{
+  "playerNames": ["Yash","Chuckaboo"]
+}
+```
+
+**Response**
+
+```json
+{
+  "allPlayerIds": [
+    "eeec815f-55df-42bf-93db-bf1866c07b87",
+    "37902f37-eceb-44f2-9a49-a506d53502d6"
+  ],
+  "newPlayerIds": [
+    "37902f37-eceb-44f2-9a49-a506d53502d6"
+  ],
+  "message": "Game created and players joined",
+  "gameId": "524d343f-8b96-483a-b9ab-5e2d29f6088d"
+}
+```
+
+---
+
+## 2️⃣ Play Card
+
+### First Player Plays
+
+**Request**
+
+```json
+{
+  "gameId": "524d343f-8b96-483a-b9ab-5e2d29f6088d",
+  "playerId": "eeec815f-55df-42bf-93db-bf1866c07b87",
+  "card": "GREEN_7"
+}
+```
+
+**Response**
+
+```json
+{
+  "message": "eeec815f-55df-42bf-93db-bf1866c07b87 played GREEN_7",
+  "nextPlayerId": "37902f37-eceb-44f2-9a49-a506d53502d6",
+  "status": "OK"
+}
+```
+
+---
+
+### Second Player Plays
+
+**Request**
+
+```json
+{
+  "gameId": "524d343f-8b96-483a-b9ab-5e2d29f6088d",
+  "playerId": "37902f37-eceb-44f2-9a49-a506d53502d6",
+  "card": "RED_7"
+}
+```
+
+**Response**
+
+```json
+{
+  "message": "37902f37-eceb-44f2-9a49-a506d53502d6 played RED_7",
+  "nextPlayerId": "eeec815f-55df-42bf-93db-bf1866c07b87",
+  "status": "OK"
+}
+```
+
+---
+
+## 3️⃣ Game State
+
+**Request**
+
+```json
+{
+  "gameId": "524d343f-8b96-483a-b9ab-5e2d29f6088d"
+}
+```
+
+**Response**
+
+```json
+{
+  "players": [
+    "eeec815f-55df-42bf-93db-bf1866c07b87",
+    "37902f37-eceb-44f2-9a49-a506d53502d6"
+  ],
+  "cardsOnTable": [
+    "eeec815f-55df-42bf-93db-bf1866c07b87:GREEN_7",
+    "37902f37-eceb-44f2-9a49-a506d53502d6:RED_7"
+  ],
+  "gameId": "524d343f-8b96-483a-b9ab-5e2d29f6088d",
+  "currentPlayerId": "eeec815f-55df-42bf-93db-bf1866c07b87"
+}
+```
+
+---
+
+With this flow you can:
+- Create or join a game,
+- Play cards in turn,
+- Observe game state updates live through the `gameState` stream.
+
+---
+
 ## Running
 
 ```bash
