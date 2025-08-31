@@ -114,39 +114,36 @@ flowchart TD
 
 ```mermaid
 sequenceDiagram
-    participant Player(1..N)
+    participant Player
     participant Server
     participant DB
 
     %% First player creates a game
-    Player(1)->>Server: joinGame(JoinRequest - no gameId)
-    Server->>DB: createGameSession(Player1)
+    Player->>Server: joinGame(no gameId)
+    Server->>DB: createGameSession
     DB-->>Server: GameSession saved
-    Server-->>Player(1): JoinResponse(gameId, newPlayerIds=[P1], allPlayerIds=[P1])
+    Server-->>Player: JoinResponse(newPlayerIds=[P1], allPlayerIds=[P1])
 
-    %% Subsequent players join existing game
-    loop For each Player(2..N)
-        Player(2..N)->>Server: joinGame(JoinRequest with gameId)
-        Server->>DB: find GameSession by gameId
-        DB-->>Server: GameSession found
-        Server->>DB: addPlayer(Player(2..N))
+    %% Subsequent players join
+    loop Each new player
+        Player->>Server: joinGame(with gameId)
+        Server->>DB: addPlayer
         DB-->>Server: updated GameSession
-        Server-->>Player(2..N): JoinResponse(gameId, newPlayerIds=[Pn], allPlayerIds=[P1..Pn])
+        Server-->>Player: JoinResponse(newPlayerIds=[Pn], allPlayerIds=[P1..Pn])
     end
 
-    %% Players subscribe to game state
-    loop Each Player(1..N)
-        Player(1..N)->>Server: gameState(GameStateRequest)
-        Server-->>Player(1..N): GameStateResponse(initial state)
+    %% Game state
+    loop Subscribe
+        Player->>Server: gameState
+        Server-->>Player: GameStateResponse
     end
 
-    %% Players play cards in turns
-    loop Turns for Player(1..N)
-        Player(1..N)->>Server: playCard(PlayRequest(card))
-        Server->>DB: update GameSession with card
+    %% Play cards
+    loop Turns
+        Player->>Server: playCard(card)
+        Server->>DB: update GameSession
         DB-->>Server: updated GameSession
-        Server-->>Player(1..N): PlayResponse(result)
-        Server-->>Player(1..N): GameStateResponse(updated state for all)
+        Server-->>Player: PlayResponse + GameStateResponse
     end
 ```
 ---
