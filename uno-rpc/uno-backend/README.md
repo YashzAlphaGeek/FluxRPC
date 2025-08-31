@@ -42,35 +42,37 @@ classDiagram
     class UnoServiceImpl {
         +joinGame(JoinRequest) : JoinResponse
         +playCard(StreamObserver<PlayResponse>) : StreamObserver<PlayRequest>
-        +gameState(GameStateRequest) : StreamObserver<GameStateResponse>
+        +gameState(GameStateRequest) : void
     }
 
     class GameService {
-        -Map<String, GameSession> sessions
-        +createGame(playerId)
-        +playCard(playerId, card)
-        +getGameState(gameId)
+        +createGame(Player) : String
+        +joinExistingGame(String, Player) : JoinResult
+        +playCard(String, String, String) : PlayResult
+        +getPlayersInGame(String) : List~String~
+        +getCardsOnTable(String) : List~String~
+        +getCurrentPlayerId(String) : String
     }
 
     class UserService {
-        -Map<String, Player> users
-        +registerUser(name)
-        +findPlayer(playerId)
+        +registerUser(String) : Player
+        +findPlayer(String) : Player
     }
 
     class GameSession {
         -String gameId
-        -List<Player> players
-        -List<Card> deck
-        -Card topCard
-        -String currentPlayerId
+        -List~String~ players
+        -List~String~ cardsOnTable
+        -int currentPlayerIndex
+        +addPlayer(String)
+        +hasPlayer(String) : boolean
+        +playCard(String, String) : PlayResult
+        +getCurrentPlayerId() : String
     }
 
     UnoServiceImpl --> GameService : uses
     UnoServiceImpl --> UserService : uses
     GameService --> GameSession : manages
-    GameSession --> Player : contains
-    GameSession --> Card : uses
 ```
 
 ---
@@ -100,14 +102,66 @@ flowchart TD
 
     %% Game State (Server Streaming)
     C3 --> S1 --> S1State --> C3
+
+    %% Broadcast Game State after each play
+    S1Play --> S1State
+    S1State --> C3
 ```
 
+---
+
+## Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant Player1
+    participant Player2
+    participant Server
+    participant DB
+
+    %% Players join game
+    Player1->>Server: joinGame(JoinRequest)
+    Server->>DB: createGame(Player1)
+    DB-->>Server: GameSession saved
+    Server-->>Player1: JoinResponse(gameId, playerId, players list)
+
+    Player2->>Server: joinGame(JoinRequest with gameId)
+    Server->>DB: find GameSession by gameId
+    DB-->>Server: GameSession found
+    Server->>DB: addPlayer(Player2)
+    DB-->>Server: updated GameSession
+    Server-->>Player2: JoinResponse(gameId, playerId, players list)
+
+    %% Players subscribe to game state
+    Player1->>Server: gameState(GameStateRequest)
+    Server-->>Player1: GameStateResponse(initial state)
+    
+    Player2->>Server: gameState(GameStateRequest)
+    Server-->>Player2: GameStateResponse(initial state)
+
+    %% Player1 plays a card
+    Player1->>Server: playCard(PlayRequest(card))
+    Server->>DB: update GameSession with card
+    DB-->>Server: updated GameSession
+    Server-->>Player1: PlayResponse(result)
+    Server-->>Player1: GameStateResponse(updated state)
+    Server-->>Player2: GameStateResponse(updated state)
+
+    %% Player2 plays a card
+    Player2->>Server: playCard(PlayRequest(card))
+    Server->>DB: update GameSession with card
+    DB-->>Server: updated GameSession
+    Server-->>Player2: PlayResponse(result)
+    Server-->>Player1: GameStateResponse(updated state)
+    Server-->>Player2: GameStateResponse(updated state)
+```
 ---
 
 ## Running
 
 ```bash
-./mvnw spring-boot:run
+mvn clean install
+mvn spring-boot:run
 ```
 ---
 
