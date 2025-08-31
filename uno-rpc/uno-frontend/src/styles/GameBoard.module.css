@@ -1,0 +1,27 @@
+.boardContainer {
+  padding: 24px;
+  max-width: 800px;
+  margin: auto;
+  font-family: Arial, sans-serif;
+}
+
+.cardsList {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  list-style: none;
+  padding: 0;
+}
+
+.cardItem {
+  padding: 8px 12px;
+  background-color: #e2e8f0;
+  border-radius: 8px;
+  font-weight: bold;
+}
+
+.cardButtons {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}

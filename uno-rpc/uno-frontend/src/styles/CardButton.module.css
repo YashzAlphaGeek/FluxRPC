@@ -1,0 +1,21 @@
+.cardButton {
+  border: 2px solid #333;
+  border-radius: 8px;
+  padding: 10px 15px;
+  margin: 5px;
+  min-width: 60px;
+  text-align: center;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.cardButton:hover {
+  transform: scale(1.05);
+}
+
+.disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
