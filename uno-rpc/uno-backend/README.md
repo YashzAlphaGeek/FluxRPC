@@ -264,10 +264,19 @@ With this flow you can:
 
 ## Running
 
+Run the helper script to automatically kill any running Java processes, build the project, and start the Spring Boot application:
+
 ```bash
-mvn clean install
-mvn spring-boot:run
-taskkill /F /IM java.exe (if required to kill any running java.exe as protoc gets locked)
+./run-java-maven.sh
 ```
+
+The reason for killing any running Java processes before building or running your project is to avoid the protoc locking issue.
+protoc (the Protocol Buffers compiler) sometimes needs to generate or overwrite files during the build.
+
+If a Java process from a previous run is still running, it may lock files that protoc wants to access.
+
+This results in errors like "file is locked" or build failures.
+
+By killing any running Java processes first, I ensure protoc can run without conflicts.
 ---
 
