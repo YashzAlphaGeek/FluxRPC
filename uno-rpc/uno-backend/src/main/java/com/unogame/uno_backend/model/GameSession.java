@@ -15,10 +15,10 @@ public class GameSession {
     private String gameId;
 
     @ElementCollection(fetch = FetchType.EAGER)
-    private List<String> players = new ArrayList<>();
+    private final List<String> players = new ArrayList<>();
 
     @ElementCollection(fetch = FetchType.EAGER)
-    private List<String> cardsOnTable = new ArrayList<>();
+    private final List<String> cardsOnTable = new ArrayList<>();
 
     private int currentPlayerIndex = 0;
 
@@ -28,31 +28,37 @@ public class GameSession {
         this.gameId = gameId;
     }
 
-    public String getGameId() { return gameId; }
-    public List<String> getPlayers() { return players; }
-    public List<String> getCardsOnTable() { return cardsOnTable; }
+    public String getGameId() {
+        return gameId;
+    }
 
-    public String getCurrentPlayerId() {
+    public synchronized List<String> getPlayers() {
+        return new ArrayList<>(players); 
+    }
+
+    public synchronized List<String> getCardsOnTable() {
+        return new ArrayList<>(cardsOnTable);
+    }
+
+    public synchronized String getCurrentPlayerId() {
         if (players.isEmpty()) return null;
         return players.get(currentPlayerIndex);
     }
 
-    public void addPlayer(String playerId) {
-        if (!players.contains(playerId)) players.add(playerId);
+    public synchronized void addPlayer(String playerId) {
+        if (!players.contains(playerId)) {
+            players.add(playerId);
+        }
     }
 
-    public boolean hasPlayer(String playerId) {
+    public synchronized boolean hasPlayer(String playerId) {
         return players.contains(playerId);
     }
 
-    /**
-     * Play a card. Returns a PlayResult indicating success, invalid turn, or other issues.
-     */
-    public PlayResult playCard(String playerId, String card) {
+    public synchronized PlayResult playCard(String playerId, String card) {
         if (!players.contains(playerId)) {
             return new PlayResult(null, PlayResult.Status.INVALID_PLAYER);
         }
-
         if (!playerId.equals(getCurrentPlayerId())) {
             return new PlayResult(getCurrentPlayerId(), PlayResult.Status.INVALID_TURN);
         }
@@ -62,12 +68,12 @@ public class GameSession {
         return new PlayResult(getCurrentPlayerId(), PlayResult.Status.OK);
     }
 
-    public void setPlayers(List<String> players) {
-        this.players = players;
+    public synchronized int getPlayerCount() {
+        return players.size();
     }
 
-    public void setCardsOnTable(List<String> cardsOnTable) {
-        this.cardsOnTable = cardsOnTable;
+    public synchronized boolean isFull(int maxPlayers) {
+        return players.size() >= maxPlayers;
     }
 
     public static class PlayResult {

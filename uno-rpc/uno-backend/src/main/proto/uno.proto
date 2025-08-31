@@ -11,15 +11,15 @@ service UnoService {
 }
 
 message JoinRequest {
-    string playerName = 1;
+    repeated string playerNames = 1;
     string gameId = 2;
 }
 
 message JoinResponse {
-    string playerId = 1;
+    string message = 1; 
     string gameId = 2;
-    repeated string players = 3;
-    string message = 4;
+    repeated string allPlayerIds = 3;   // All players currently in the game
+    repeated string newPlayerIds = 4;   // Newly joined players in this request   
 }
 
 message PlayRequest {

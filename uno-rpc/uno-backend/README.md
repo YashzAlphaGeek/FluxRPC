@@ -114,52 +114,39 @@ flowchart TD
 
 ```mermaid
 sequenceDiagram
-    participant Player1
-    participant Player2
+    participant Player(1..N)
     participant Server
     participant DB
 
-    %% Players join game
-    loop Player1 joins
-        Player1->>Server: joinGame(JoinRequest)
-        Server->>DB: createGame(Player1)
-        DB-->>Server: GameSession saved
-        Server-->>Player1: JoinResponse(gameId, playerId, players list)
-    end
+    %% First player creates a game
+    Player(1)->>Server: joinGame(JoinRequest - no gameId)
+    Server->>DB: createGameSession(Player1)
+    DB-->>Server: GameSession saved
+    Server-->>Player(1): JoinResponse(gameId, newPlayerIds=[P1], allPlayerIds=[P1])
 
-    loop Player2 joins
-        Player2->>Server: joinGame(JoinRequest with gameId)
+    %% Subsequent players join existing game
+    loop For each Player(2..N)
+        Player(2..N)->>Server: joinGame(JoinRequest with gameId)
         Server->>DB: find GameSession by gameId
         DB-->>Server: GameSession found
-        Server->>DB: addPlayer(Player2)
+        Server->>DB: addPlayer(Player(2..N))
         DB-->>Server: updated GameSession
-        Server-->>Player2: JoinResponse(gameId, playerId, players list)
+        Server-->>Player(2..N): JoinResponse(gameId, newPlayerIds=[Pn], allPlayerIds=[P1..Pn])
     end
 
     %% Players subscribe to game state
-    loop Subscribe
-        Player1->>Server: gameState(GameStateRequest)
-        Server-->>Player1: GameStateResponse(initial state)
-
-        Player2->>Server: gameState(GameStateRequest)
-        Server-->>Player2: GameStateResponse(initial state)
+    loop Each Player(1..N)
+        Player(1..N)->>Server: gameState(GameStateRequest)
+        Server-->>Player(1..N): GameStateResponse(initial state)
     end
 
     %% Players play cards in turns
-    loop Turns
-        Player1->>Server: playCard(PlayRequest(card))
+    loop Turns for Player(1..N)
+        Player(1..N)->>Server: playCard(PlayRequest(card))
         Server->>DB: update GameSession with card
         DB-->>Server: updated GameSession
-        Server-->>Player1: PlayResponse(result)
-        Server-->>Player1: GameStateResponse(updated state)
-        Server-->>Player2: GameStateResponse(updated state)
-
-        Player2->>Server: playCard(PlayRequest(card))
-        Server->>DB: update GameSession with card
-        DB-->>Server: updated GameSession
-        Server-->>Player2: PlayResponse(result)
-        Server-->>Player1: GameStateResponse(updated state)
-        Server-->>Player2: GameStateResponse(updated state)
+        Server-->>Player(1..N): PlayResponse(result)
+        Server-->>Player(1..N): GameStateResponse(updated state for all)
     end
 ```
 ---

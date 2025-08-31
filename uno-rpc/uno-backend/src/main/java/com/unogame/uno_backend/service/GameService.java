@@ -1,5 +1,6 @@
 package com.unogame.uno_backend.service;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -24,6 +25,24 @@ public class GameService {
     public GameService(GameSessionRepository gameSessionRepository) {
         this.gameSessionRepository = gameSessionRepository;
     }
+
+    @Transactional
+public List<JoinResult> joinPlayers(String gameId, List<Player> players) {
+    GameSession session = gameSessionRepository.findById(gameId).orElse(null);
+    if (session == null) return Collections.emptyList();
+
+    List<JoinResult> results = new ArrayList<>();
+    for (Player player : players) {
+        boolean alreadyJoined = session.hasPlayer(player.getPlayerId());
+        if (!alreadyJoined) {
+            session.addPlayer(player.getPlayerId());
+        }
+        results.add(new JoinResult(player.getPlayerId(), alreadyJoined));
+    }
+    gameSessionRepository.saveAndFlush(session);
+    return results;
+}
+
 
     @Transactional
     public String createGame(Player player) {

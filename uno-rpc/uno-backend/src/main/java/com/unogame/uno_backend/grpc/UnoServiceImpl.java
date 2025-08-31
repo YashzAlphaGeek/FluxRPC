@@ -1,5 +1,6 @@
 package com.unogame.uno_backend.grpc;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,48 +37,56 @@ public class UnoServiceImpl extends UnoServiceGrpc.UnoServiceImplBase {
 
     @Override
     public void joinGame(JoinRequest request, StreamObserver<JoinResponse> responseObserver) {
-        if (request.getPlayerName() == null || request.getPlayerName().isEmpty()) {
+        List<String> playerNames = request.getPlayerNamesList();
+
+        if (playerNames.isEmpty()) {
             responseObserver.onError(Status.INVALID_ARGUMENT
-                    .withDescription("Player name cannot be empty")
+                    .withDescription("At least one player name must be provided")
                     .asRuntimeException());
             return;
         }
 
-        Player player = userService.registerUser(request.getPlayerName());
-
         String gameId;
-        boolean alreadyJoined = false;
+        boolean newGame = false;
 
         if (request.getGameId() == null || request.getGameId().isEmpty()) {
-            gameId = gameService.createGame(player);
+            // Create a new game for the first player
+            Player firstPlayer = userService.registerUser(playerNames.get(0));
+            gameId = gameService.createGame(firstPlayer);
+            newGame = true;
         } else {
-            GameService.JoinResult result = gameService.joinExistingGame(request.getGameId(), player);
+            gameId = request.getGameId();
+        }
+
+        // Register and add all players
+        List<String> newPlayerIds = new ArrayList<>();
+        for (String playerName : playerNames) {
+            Player player = userService.registerUser(playerName);
+            GameService.JoinResult result = gameService.joinExistingGame(gameId, player);
             if (result == null) {
                 responseObserver.onError(Status.NOT_FOUND
                         .withDescription("Game ID not found")
                         .asRuntimeException());
                 return;
             }
-            gameId = result.gameId();
-            alreadyJoined = result.alreadyJoined();
+            if (!result.alreadyJoined()) {
+                newPlayerIds.add(player.getPlayerId());
+            }
         }
 
-        List<String> currentPlayers = gameService.getPlayersInGame(gameId);
+        List<String> allPlayerIds = gameService.getPlayersInGame(gameId);
 
         JoinResponse response = JoinResponse.newBuilder()
-                .setMessage(alreadyJoined ? "Already joined this game!" : "Joined successfully!")
-                .setPlayerId(player.getPlayerId())
+                .setMessage(newGame ? "Game created and players joined" : "Players joined successfully")
                 .setGameId(gameId)
-                .addAllPlayers(currentPlayers)
+                .addAllAllPlayerIds(allPlayerIds)
+                .addAllNewPlayerIds(newPlayerIds)
                 .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
 
-        logger.info("Player {} {} game {}",
-                player.getName(),
-                alreadyJoined ? "rejoined" : "joined",
-                gameId);
+        logger.info("Players {} joined game {}", playerNames, gameId);
     }
 
     @Override

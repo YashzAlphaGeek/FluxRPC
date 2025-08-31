@@ -18,9 +18,13 @@ public class UserService {
         this.playerRepository = playerRepository;
     }
 
-    public Player registerUser(String playerName) {
-        Player player = new Player(UUID.randomUUID().toString(), playerName);
-        playerRepository.save(player);
-        return player;
-    }
+   public Player registerUser(String playerName) {
+    return playerRepository.findByName(playerName)
+            .orElseGet(() -> {
+                Player player = new Player(UUID.randomUUID().toString(), playerName);
+                playerRepository.save(player);
+                return player;
+            });
+}
+
 }
