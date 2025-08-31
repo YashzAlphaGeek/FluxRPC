@@ -255,6 +255,8 @@ sequenceDiagram
 
 ---
 
+<img width="861" height="311" alt="image" src="https://github.com/user-attachments/assets/ed789b1e-d727-4943-bfcc-a78e1cb80aaf" />
+
 With this flow you can:
 - Create or join a game,
 - Play cards in turn,
