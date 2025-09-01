@@ -1,0 +1,36 @@
+.gameWrapper,
+.gameWrapper .mainArea,
+.gameWrapper .sidebar,
+.gameWrapper .roundTable,
+.gameWrapper .handSection,
+.gameWrapper .handCardsRow,
+.gameWrapper .centerTable {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  cursor: default;
+}
+
+.gameWrapper input,
+.gameWrapper textarea,
+.gameWrapper input:focus,
+.gameWrapper textarea:focus {
+  user-select: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  cursor: text;
+  outline: auto; 
+}
+
+.gameWrapper button,
+.gameWrapper button:focus {
+  cursor: pointer;
+}
+
+.gameWrapper input::selection,
+.gameWrapper textarea::selection {
+  background: #b3d4fc;
+  color: #000;
+}

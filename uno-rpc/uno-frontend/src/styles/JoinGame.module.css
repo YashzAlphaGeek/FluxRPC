@@ -3,39 +3,66 @@
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #7f00ff, #e100ff);
+  background: 
+    linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), 
+    url('../assets/BG.jpeg') no-repeat center center; 
+  background-size: cover;
   padding: 16px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .card {
-  background-color: rgba(255, 255, 255, 0.9);
-  border-radius: 20px;
-  padding: 24px;
+  background-color: rgba(255, 255, 255, 0.95); 
+  border-radius: 24px;
+  padding: 32px;
   max-width: 400px;
   width: 100%;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
+  backdrop-filter: blur(10px); 
+  color: #111;
 }
 
 .card input {
-  padding: 8px;
-  border-radius: 8px;
+  padding: 12px;
+  border-radius: 12px;
   border: 1px solid #ccc;
   width: 100%;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.card input:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 8px rgba(79,70,229,0.5);
 }
 
 .card button {
   background-color: #4f46e5;
   color: white;
-  padding: 12px;
-  border-radius: 12px;
+  padding: 14px;
+  border-radius: 16px;
   border: none;
   cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.card button:hover:not(:disabled) {
+  background-color: #6366f1;
+  box-shadow: 0 4px 12px rgba(79,70,229,0.4);
 }
 
 .card button:disabled {
   background-color: gray;
   cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.card, .card input, .card button {
+  transition: all 0.2s ease;
 }

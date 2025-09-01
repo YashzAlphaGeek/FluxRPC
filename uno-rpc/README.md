@@ -1,4 +1,4 @@
-# 🎲 UNO Game – gRPC with Envoy and React
+# UNO Game – gRPC with Envoy and React
 
 **UNO card game** built using:
 
@@ -14,8 +14,8 @@ The architecture allows **real-time communication** between players in the brows
 
 ```mermaid
 graph TD
-    User[👨‍💻 Player in Browser] -->|UI Actions| Frontend[React Frontend<br/>gRPC-Web Client]
-    Frontend -->|gRPC-Web| Envoy[Envoy Proxy<br/>grpc_web filter + CORS]
+    User[Player in Browser] -->|UI Actions| Frontend[React Frontend\ngRPC-Web Client]
+    Frontend -->|gRPC-Web| Envoy[Envoy Proxy\ngRPC-Web filter + CORS]
     Envoy -->|Native gRPC (HTTP/2)| Backend[Spring Boot UNO Service]
     Backend --> DB[(Game State Manager)]
 
@@ -24,6 +24,7 @@ graph TD
     style Envoy fill:#ffd,stroke:#333,stroke-width:1px
     style Backend fill:#dfd,stroke:#333,stroke-width:1px
     style DB fill:#eee,stroke:#333,stroke-width:1px
+```
 
 ##  Running the System
 

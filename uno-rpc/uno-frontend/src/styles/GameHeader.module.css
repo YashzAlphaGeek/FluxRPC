@@ -1,24 +1,103 @@
-.boardContainer {
-  padding: 24px;
-  max-width: 800px;
-  margin: auto;
+.sidebar {
+  width: 220px;
+  background: #1e1e2f;
+  color: #fff;
+  padding: 20px;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  flex-shrink: 0;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
 }
 
-.cardsList {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
+h3 {
+  margin: 0 0 10px 0;
+  font-size: 18px;
+  text-align: center;
+  color: #f5a623;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  user-select: none;
+}
+
+.playerList {
   list-style: none;
   padding: 0;
-}
-
-.cardItem {
-  padding: 8px 12px;
-  background-color: #e2e8f0;
-  border-radius: 8px;
-}
-
-.cardButtons {
+  margin: 0;
   display: flex;
-  gap: 8px;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.playerItem {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 12px;
+  cursor: default;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  background: transparent; 
+  user-select: none;      
+}
+
+.playerItem::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  background-color: var(--player-color, #4a90e2); 
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+  transition: background-color 0.3s ease;
+}
+
+.playerItem.currentTurn {
+  box-shadow: 0 0 12px #f5a623, 0 4px 8px rgba(0,0,0,0.2);
+  transform: scale(1.05);
+}
+
+.playerName {
+  font-weight: 500;
+  font-size: 0.95rem;
+  position: relative;
+  z-index: 1;
+}
+
+.playerCards {
+  font-weight: 400;
+  font-size: 0.9rem;
+  opacity: 0.85;
+  position: relative;
+  z-index: 1;
+}
+
+.turnInfo {
+  margin-top: 20px;
+  font-size: 14px;
+  text-align: center;
+  padding: 12px;
+  background: #2b2b3e;
+  border-radius: 12px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+  color: #f5a623;
+  font-weight: 500;
+  user-select: none;
+}
+
+.playerItem:not(.currentTurn):hover {
+  transform: scale(1.02);
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 90%;
+    margin: 0 auto;
+  }
 }

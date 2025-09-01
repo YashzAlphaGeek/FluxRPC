@@ -1,27 +1,170 @@
-.boardContainer {
-  padding: 24px;
-  max-width: 800px;
-  margin: auto;
-  font-family: Arial, sans-serif;
-}
-
-.cardsList {
+.gameWrapper {
   display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
-  list-style: none;
-  padding: 0;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  gap: 20px;
+  padding: 20px;
+  box-sizing: border-box;
+  background: #f0f2f5;
 }
 
-.cardItem {
-  padding: 8px 12px;
-  background-color: #e2e8f0;
-  border-radius: 8px;
+.mainArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background-image: url('../assets/Uno.jpeg'); 
+  background-size: cover;
+  background-position: center;
+  border-radius: 16px;
+  overflow: hidden;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.mainArea::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.25); 
+  z-index: 0;
+}
+
+.roundTable {
+  position: relative;
+  width: 60vmin;
+  height: 60vmin;
+  max-width: 500px;
+  max-height: 500px;
+  border-radius: 50%;
+  border: 2px dashed #ccc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.playerCircle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  min-width: 70px;
+  height: 50px;
+  text-align: center;
+  transform-origin: center;
+  transition: transform 0.4s ease, box-shadow 0.3s;
+  border-radius: 14px;
+  padding: 5px;
+  font-weight: 600;
+  color: #fff;
+  z-index: 2;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+  backdrop-filter: blur(6px);
+  background-color: rgba(50, 50, 50, 0.7); 
+  user-select: none; 
+}
+
+.playerCircle.currentTurn {
+  box-shadow: 0 0 20px 8px gold;
+  transform: scale(1.15);
+}
+
+.playerCircle[data-color="red"] { background: #e74c3c; }
+.playerCircle[data-color="green"] { background: #27ae60; }
+.playerCircle[data-color="yellow"] { background: #f1c40f; color: #333; }
+.playerCircle[data-color="blue"] { background: #3498db; }
+.playerCircle[data-color="purple"] { background: #8e44ad; }
+.playerCircle[data-color="orange"] { background: #e67e22; }
+
+.playerCircle div:first-child {
+  font-size: 0.9rem;
   font-weight: bold;
 }
 
-.cardButtons {
+.playerCircle div:last-child {
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
+.centerTable {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   display: flex;
-  gap: 8px;
-  margin-top: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  z-index: 2;
+}
+
+.handSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.handSection h3 {
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.7); 
+  margin-bottom: 10px;
+  user-select: none;
+}
+
+.handCardsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+
+.noCardsText {
+  font-style: italic;
+  color: #f0f0f0; 
+  user-select: none;
+}
+
+
+.animateCard {
+  transform: scale(1.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+}
+
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 8px 2px rgba(255,255,255,0.4); }
+  50% { box-shadow: 0 0 16px 4px rgba(255,255,255,0.6); }
+  100% { box-shadow: 0 0 8px 2px rgba(255,255,255,0.4); }
+}
+
+.playable {
+  animation: pulseGlow 1.5s infinite ease-in-out;
+}
+
+@media (max-width: 768px) {
+  .gameWrapper {
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .sidebar {
+    width: 90%;
+    min-width: auto;
+  }
+
+  .roundTable {
+    width: 80vmin;
+    height: 80vmin;
+  }
 }

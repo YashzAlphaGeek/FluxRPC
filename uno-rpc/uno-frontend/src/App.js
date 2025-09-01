@@ -8,21 +8,22 @@ function App() {
   return (
     <>
       {gameInfo ? (
-        <GameBoard 
-          gameId={gameInfo.gameId} 
-          playerId={gameInfo.playerId} 
-          playerName={gameInfo.playerName} 
+        <GameBoard
+          gameId={gameInfo.gameId}
+          playerId={gameInfo.playerId}
+          playerName={gameInfo.playerName}
         />
       ) : (
-        <JoinGame 
-          onJoined={(resp) => {
-            const myPlayerId = resp.newplayeridsList?.[0] || resp.allplayeridsList?.[0];
+        <JoinGame
+          onJoined={(resp, playerNameInput) => {
+            const myPlayerId =
+              resp.newplayeridsList?.[0] || resp.allplayeridsList?.[0];
             setGameInfo({
               gameId: resp.gameid,
               playerId: myPlayerId,
-              playerName: myPlayerId 
+              playerName: playerNameInput,
             });
-          }} 
+          }}
         />
       )}
     </>
