@@ -5,7 +5,6 @@ import GameHeader from "../components/GameHeader";
 import styles from "../styles/GameBoard.module.css";
 import '../styles/common.css';
 
-
 const COLORS = ["red", "green", "yellow", "blue", "purple", "orange"];
 
 const GameBoard = ({ gameId, playerId, playerName }) => {
@@ -25,12 +24,12 @@ const GameBoard = ({ gameId, playerId, playerName }) => {
         if (state.playersList?.length) {
           setPlayers(
             state.playersList.map((p, i) => ({
-              id: p.id || `player-${i}`,
-              name: p.name || `Player ${i + 1}`,
-              color: COLORS[i % COLORS.length], 
+              id: p.id,
+              name: p.name && p.name.trim() !== "" ? p.name : `Player ${i + 1}`,
+              color: COLORS[i % COLORS.length],
               cards: (p.cards || []).map((c, j) => ({
                 ...c,
-                uid: `${c.color}_${c.value}_${j}_${i}`,
+                uid: `${c.color}_${c.value}_${j}_${i}`, // unique per card
               })),
             }))
           );
@@ -42,7 +41,7 @@ const GameBoard = ({ gameId, playerId, playerName }) => {
         setCardsOnTable(
           (state.cardsontableList || []).map((c, i) => ({
             ...c,
-            uid: `${c.color}_${c.value}_${i}`,
+            uid: `${c.color}_${c.value}_${i}`, // unique key for table cards
           }))
         );
 
@@ -50,7 +49,7 @@ const GameBoard = ({ gameId, playerId, playerName }) => {
         setMyCards(
           (me?.cards || []).map((c, i) => ({
             ...c,
-            uid: `${c.color}_${c.value}_${i}`,
+            uid: `${c.color}_${c.value}_${i}`, // unique key for hand cards
           }))
         );
       },
@@ -92,9 +91,9 @@ const GameBoard = ({ gameId, playerId, playerName }) => {
             const angle = (360 / players.length) * index;
             return (
               <div
-                key={p.id || `player-${index}`}
+                key={p.id} // unique key for each player
                 className={`${styles.playerCircle} ${p.id === currentPlayer?.id ? styles.currentTurn : ""}`}
-                data-color={p.color} 
+                data-color={p.color}
                 style={{
                   transform: `rotate(${angle}deg) translate(${radius}px) rotate(-${angle}deg)`,
                 }}
@@ -110,10 +109,10 @@ const GameBoard = ({ gameId, playerId, playerName }) => {
             {cardsOnTable.length > 0 ? (
               cardsOnTable.map((c) => (
                 <CardButton
-                  key={c.uid}
+                  key={c.uid} // unique key
                   card={`${c.color}_${c.value}`}
-                  disabled={!isMyTurn} 
-                  playable={isMyTurn} 
+                  disabled={!isMyTurn}
+                  playable={isMyTurn}
                 />
               ))
             ) : (
@@ -129,7 +128,7 @@ const GameBoard = ({ gameId, playerId, playerName }) => {
             {myCards.length > 0 ? (
               myCards.map((c) => (
                 <CardButton
-                  key={c.uid}
+                  key={c.uid} // unique key
                   card={`${c.color}_${c.value}`}
                   onClick={() => handlePlayCard(c)}
                   disabled={!isMyTurn}

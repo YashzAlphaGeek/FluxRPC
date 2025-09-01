@@ -6,14 +6,12 @@ const GameHeader = ({ players, currentPlayer }) => {
     <div className={styles.sidebar}>
       <h3>Players</h3>
       <ul className={styles.playerList}>
-        {players.map((p, idx) => (
+        {players.map((p) => (
           <li
-            key={p.id || `player-${idx}`}
-            className={`${styles.playerItem} ${
-              p.id === currentPlayer?.id ? styles.currentTurn : ""
-            }`}
+            key={p.id} // unique key
+            className={`${styles.playerItem} ${p.id === currentPlayer?.id ? styles.currentTurn : ""}`}
             style={{
-              '--player-color': p.color || "#4a90e2", 
+              '--player-color': p.color || "#4a90e2",
             }}
           >
             <span className={styles.playerName}>{p.name}</span>

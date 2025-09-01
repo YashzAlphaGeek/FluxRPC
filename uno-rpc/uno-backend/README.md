@@ -242,7 +242,7 @@ sequenceDiagram
 
 ```json
 {
-  "gameId": "524d343f-8b96-483a-b9ab-5e2d29f6088d"
+  "gameId": "0606ea54-415c-44b4-84d4-3cd5ebee62ca"
 }
 ```
 
@@ -250,16 +250,21 @@ sequenceDiagram
 
 ```json
 {
-  "players": [
-    "eeec815f-55df-42bf-93db-bf1866c07b87",
-    "37902f37-eceb-44f2-9a49-a506d53502d6"
-  ],
-  "cardsOnTable": [
-    "eeec815f-55df-42bf-93db-bf1866c07b87:GREEN_7",
-    "37902f37-eceb-44f2-9a49-a506d53502d6:RED_7"
-  ],
-  "gameId": "524d343f-8b96-483a-b9ab-5e2d29f6088d",
-  "currentPlayerId": "eeec815f-55df-42bf-93db-bf1866c07b87"
+    "players": [
+        {
+            "id": "04e0b608-32b5-4b4f-bdd0-a270921a3375",
+            "name": "Yash"
+        },
+        {
+            "id": "dfcd0891-a736-490f-8e66-dc13533dd30d",
+            "name": "Chuckaboo"
+        }
+    ],
+    "cardsOnTable": [],
+    "gameId": "0606ea54-415c-44b4-84d4-3cd5ebee62ca",
+    "currentPlayerId": "04e0b608-32b5-4b4f-bdd0-a270921a3375",
+    "lastMoveStatus": "OK",
+    "lastMoveInfo": ""
 }
 ```
 
