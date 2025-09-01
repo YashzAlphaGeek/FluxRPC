@@ -14,9 +14,9 @@ The architecture allows **real-time communication** between players in the brows
 
 ```mermaid
 graph TD
-    User[Player in Browser] -->|UI Actions| Frontend[React Frontend\ngRPC-Web Client]
-    Frontend -->|gRPC-Web| Envoy[Envoy Proxy\ngRPC-Web filter + CORS]
-    Envoy -->|Native gRPC (HTTP/2)| Backend[Spring Boot UNO Service]
+    User[Player in Browser] -->|UI Actions| Frontend[React Frontend - gRPC-Web Client]
+    Frontend -->|gRPC-Web| Envoy[Envoy Proxy - gRPC-Web filter + CORS]
+    Envoy -->|Native gRPC HTTP-2 | Backend[Spring Boot UNO Service]
     Backend --> DB[(Game State Manager)]
 
     style User fill:#fdd,stroke:#333,stroke-width:1px
