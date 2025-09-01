@@ -1,102 +1,95 @@
 package com.unogame.uno_backend.service;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.unogame.uno_backend.model.GameSession;
-import com.unogame.uno_backend.model.GameSession.PlayResult;
 import com.unogame.uno_backend.model.Player;
 import com.unogame.uno_backend.repository.GameSessionRepository;
-
-import jakarta.transaction.Transactional;
 
 @Service
 public class GameService {
 
     private final GameSessionRepository gameSessionRepository;
+    private static final int MAX_PLAYERS = 4;
 
-
-    @Autowired
     public GameService(GameSessionRepository gameSessionRepository) {
         this.gameSessionRepository = gameSessionRepository;
     }
 
     @Transactional
-public List<JoinResult> joinPlayers(String gameId, List<Player> players) {
-    GameSession session = gameSessionRepository.findById(gameId).orElse(null);
-    if (session == null) return Collections.emptyList();
-
-    List<JoinResult> results = new ArrayList<>();
-    for (Player player : players) {
-        boolean alreadyJoined = session.hasPlayer(player.getPlayerId());
-        if (!alreadyJoined) {
-            session.addPlayer(player.getPlayerId());
-        }
-        results.add(new JoinResult(player.getPlayerId(), alreadyJoined));
-    }
-    gameSessionRepository.saveAndFlush(session);
-    return results;
-}
-
-
-    @Transactional
-    public String createGame(Player player) {
+    public String createGame(Player firstPlayer) {
         String gameId = UUID.randomUUID().toString();
-        GameSession session = new GameSession(gameId);
-        session.addPlayer(player.getPlayerId());
-        gameSessionRepository.saveAndFlush(session);
+        GameSession gameSession = new GameSession(gameId);
+        gameSession.addPlayer(firstPlayer);
+        gameSessionRepository.save(gameSession);
         return gameId;
     }
 
     @Transactional
-    public JoinResult joinExistingGame(String gameId, Player player) {
-        GameSession session = gameSessionRepository.findById(gameId).orElse(null);
-        if (session == null) return null;
-
-        boolean alreadyJoined = session.hasPlayer(player.getPlayerId());
-        if (!alreadyJoined) {
-            session.addPlayer(player.getPlayerId());
-            gameSessionRepository.saveAndFlush(session); 
+    public JoinResponse joinPlayers(String gameId, List<Player> players) {
+        Optional<GameSession> optGame = gameSessionRepository.findById(gameId);
+        if (optGame.isEmpty()) {
+            throw new IllegalArgumentException("Game not found: " + gameId);
         }
 
-        return new JoinResult(session.getGameId(), alreadyJoined);
-    }
+        GameSession game = optGame.get();
+        List<PlayerInfo> newPlayers = new ArrayList<>();
 
-    @Transactional
-    public PlayResult playCard(String gameId, String playerId, String card) {
-        GameSession session = gameSessionRepository.findById(gameId).orElse(null);
-        if (session != null) {
-            PlayResult result = session.playCard(playerId, card);
-            gameSessionRepository.saveAndFlush(session); 
-            return result;
+        for (Player player : players) {
+            if (!game.hasPlayer(player.getPlayerId()) && !game.isFull(MAX_PLAYERS)) {
+                game.addPlayer(player);
+                newPlayers.add(new PlayerInfo(player.getPlayerId(), player.getName()));
+            }
         }
-        return new PlayResult(null, PlayResult.Status.INVALID_PLAYER);
+
+        gameSessionRepository.save(game);
+
+        List<PlayerInfo> allPlayers = game.getPlayers().stream()
+                .map(p -> new PlayerInfo(p.getPlayerId(), p.getName()))
+                .toList();
+
+        return new JoinResponse(allPlayers, newPlayers);
     }
 
-    public List<String> getPlayersInGame(String gameId) {
+    @Transactional(readOnly = true)
+    public List<PlayerInfo> getPlayersInGame(String gameId) {
         return gameSessionRepository.findById(gameId)
-                .map(GameSession::getPlayers)
-                .orElse(Collections.emptyList());
+                .map(g -> g.getPlayers().stream()
+                        .map(p -> new PlayerInfo(p.getPlayerId(), p.getName()))
+                        .toList())
+                .orElse(List.of());
     }
 
+    @Transactional(readOnly = true)
     public List<String> getCardsOnTable(String gameId) {
-        GameSession session = gameSessionRepository.findById(gameId).orElse(null);
-        return session != null ? session.getCardsOnTable() : Collections.emptyList();
-
+        return gameSessionRepository.findById(gameId)
+                .map(GameSession::getCardsOnTable)
+                .orElse(List.of());
     }
 
+    @Transactional(readOnly = true)
     public String getCurrentPlayerId(String gameId) {
         return gameSessionRepository.findById(gameId)
                 .map(GameSession::getCurrentPlayerId)
                 .orElse(null);
     }
 
-    public record JoinResult(String gameId, boolean alreadyJoined) {
+    @Transactional
+    public GameSession.PlayResult playCard(String gameId, String playerId, String card) {
+        GameSession game = gameSessionRepository.findById(gameId)
+                .orElseThrow(() -> new IllegalArgumentException("Game not found: " + gameId));
+
+        GameSession.PlayResult result = game.playCard(playerId, card);
+        gameSessionRepository.save(game);
+        return result;
     }
 
+    public record PlayerInfo(String id, String name) {}
+    public record JoinResponse(List<PlayerInfo> allPlayers, List<PlayerInfo> newPlayers) {}
 }

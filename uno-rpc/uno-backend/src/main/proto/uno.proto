@@ -15,11 +15,16 @@ message JoinRequest {
     string gameId = 2;
 }
 
+message PlayerInfo {
+    string id = 1;
+    string name = 2;
+}
+
 message JoinResponse {
     string message = 1; 
     string gameId = 2;
-    repeated string allPlayerIds = 3;   // All players currently in the game
-    repeated string newPlayerIds = 4;   // Newly joined players in this request   
+    repeated PlayerInfo allPlayerIds = 3;   // All players currently in the game
+    repeated PlayerInfo newPlayerIds = 4;   // Newly joined players in this request   
 }
 
 message PlayRequest {
@@ -40,7 +45,7 @@ message GameStateRequest {
 
 message GameStateResponse {
     string gameId = 1;
-    repeated string players = 2;
+    repeated PlayerInfo players = 2;
     repeated string cardsOnTable = 3;
     string currentPlayerId = 4;
 }

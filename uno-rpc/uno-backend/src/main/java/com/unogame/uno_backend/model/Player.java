@@ -8,15 +8,22 @@ public class Player {
 
     @Id
     private String playerId;
+
     private String name;
 
-    protected Player() {} 
+    protected Player() {
+    }
 
     public Player(String playerId, String name) {
         this.playerId = playerId;
         this.name = name;
     }
 
-    public String getPlayerId() { return playerId; }
-    public String getName() { return name; }
+    public String getPlayerId() {
+        return playerId;
+    }
+
+    public String getName() {
+        return name;
+    }
 }

@@ -154,7 +154,8 @@ sequenceDiagram
 
 ```json
 {
-  "playerNames": ["Yash","Chuckaboo"]
+  "playerNames": ["Yash", "Chuckaboo"],
+  "gameId": ""   // empty to create a new game
 }
 ```
 
@@ -162,15 +163,24 @@ sequenceDiagram
 
 ```json
 {
-  "allPlayerIds": [
-    "eeec815f-55df-42bf-93db-bf1866c07b87",
-    "37902f37-eceb-44f2-9a49-a506d53502d6"
-  ],
-  "newPlayerIds": [
-    "37902f37-eceb-44f2-9a49-a506d53502d6"
-  ],
-  "message": "Game created and players joined",
-  "gameId": "524d343f-8b96-483a-b9ab-5e2d29f6088d"
+    "allPlayerIds": [
+        {
+            "id": "cd991e6b-3090-4ed6-93e7-3ef3e0d13fdd",
+            "name": "Yash"
+        },
+        {
+            "id": "3a258481-2383-4840-b52d-aa0ab21920b1",
+            "name": "Chuckaboo"
+        }
+    ],
+    "newPlayerIds": [
+        {
+            "id": "3a258481-2383-4840-b52d-aa0ab21920b1",
+            "name": "Chuckaboo"
+        }
+    ],
+    "message": "Game created and players joined",
+    "gameId": "fe130b1e-2c5e-43eb-a80c-e02756524010"
 }
 ```
 
