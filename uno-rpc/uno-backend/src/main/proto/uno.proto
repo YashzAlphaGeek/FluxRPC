@@ -48,6 +48,8 @@ message GameStateResponse {
     repeated PlayerInfo players = 2;
     repeated string cardsOnTable = 3;
     string currentPlayerId = 4;
+    PlayStatus lastMoveStatus = 5;
+    string lastMoveInfo = 6;  
 }
 
 enum PlayStatus {

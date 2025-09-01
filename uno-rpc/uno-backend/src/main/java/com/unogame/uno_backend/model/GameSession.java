@@ -18,11 +18,7 @@ public class GameSession {
     private String gameId;
 
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-        name = "game_session_players",
-        joinColumns = @JoinColumn(name = "game_id", referencedColumnName = "gameId"),
-        inverseJoinColumns = @JoinColumn(name = "player_id", referencedColumnName = "playerId")
-    )
+    @JoinTable(name = "game_session_players", joinColumns = @JoinColumn(name = "game_id", referencedColumnName = "gameId"), inverseJoinColumns = @JoinColumn(name = "player_id", referencedColumnName = "playerId"))
     private List<Player> players = new ArrayList<>();
 
     @ElementCollection(fetch = FetchType.EAGER)
@@ -30,7 +26,8 @@ public class GameSession {
 
     private int currentPlayerIndex = 0;
 
-    protected GameSession() {}
+    protected GameSession() {
+    }
 
     public GameSession(String gameId) {
         this.gameId = gameId;
@@ -49,7 +46,8 @@ public class GameSession {
     }
 
     public synchronized String getCurrentPlayerId() {
-        if (players.isEmpty()) return null;
+        if (players.isEmpty())
+            return null;
         return players.get(currentPlayerIndex).getPlayerId();
     }
 
@@ -76,11 +74,9 @@ public class GameSession {
             return new PlayResult(getCurrentPlayerId(), PlayResult.Status.INVALID_PLAYER);
         }
 
-        cardsOnTable.add(playerId + ":" + card);
+        cardsOnTable.add(card);
 
-        if (!players.isEmpty()) {
-            currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
-        }
+        currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
 
         return new PlayResult(getCurrentPlayerId(), PlayResult.Status.OK);
     }
@@ -102,7 +98,9 @@ public class GameSession {
     }
 
     public static class PlayResult {
-        public enum Status { OK, INVALID_TURN, INVALID_PLAYER }
+        public enum Status {
+            OK, INVALID_TURN, INVALID_PLAYER
+        }
 
         private final String nextPlayerId;
         private final Status status;
@@ -112,7 +110,12 @@ public class GameSession {
             this.status = status;
         }
 
-        public String getNextPlayerId() { return nextPlayerId; }
-        public Status getStatus() { return status; }
+        public String getNextPlayerId() {
+            return nextPlayerId;
+        }
+
+        public Status getStatus() {
+            return status;
+        }
     }
 }
