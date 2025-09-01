@@ -110,7 +110,6 @@ public class UnoServiceImpl extends UnoServiceGrpc.UnoServiceImplBase {
 
                 responseObserver.onNext(response);
 
-                // Broadcast updated game state including last move info
                 broadcastGameState(request.getGameId(), status, request.getPlayerId(), request.getCard());
             }
 
@@ -130,14 +129,12 @@ public class UnoServiceImpl extends UnoServiceGrpc.UnoServiceImplBase {
     public void gameState(GameStateRequest request, StreamObserver<GameStateResponse> responseObserver) {
         String gameId = request.getGameId();
         gameStateObservers.computeIfAbsent(gameId, k -> new CopyOnWriteArrayList<>()).add(responseObserver);
-        // Default lastMoveStatus is OK and no last card for new subscribers
         sendGameStateToObserver(gameId, responseObserver, PlayStatus.OK, null, null);
     }
 
     private void sendGameStateToObserver(String gameId, StreamObserver<GameStateResponse> observer,
                                          PlayStatus lastMoveStatus, String lastPlayerId, String lastCard) {
 
-        // Fetch structured players and cards
         List<PlayerInfo> players = gameService.getPlayersInGame(gameId);
         List<String> cards = gameService.getCardsOnTable(gameId);
         String currentPlayer = gameService.getCurrentPlayerId(gameId);

@@ -61,7 +61,7 @@ public class GameSession {
         return players.stream().anyMatch(p -> p.getPlayerId().equals(playerId));
     }
 
-    public synchronized PlayResult playCard(String playerId, String card) {
+     public synchronized PlayResult playCard(String playerId, String card) {
         if (players.isEmpty() || !hasPlayer(playerId)) {
             return new PlayResult(null, PlayResult.Status.INVALID_PLAYER);
         }
@@ -74,9 +74,11 @@ public class GameSession {
             return new PlayResult(getCurrentPlayerId(), PlayResult.Status.INVALID_PLAYER);
         }
 
-        cardsOnTable.add(card);
+        cardsOnTable.add(playerId + ":" + card);
 
-        currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
+        if (!players.isEmpty()) {
+            currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
+        }
 
         return new PlayResult(getCurrentPlayerId(), PlayResult.Status.OK);
     }
