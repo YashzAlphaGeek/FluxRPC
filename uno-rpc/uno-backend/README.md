@@ -277,8 +277,7 @@ protoc (the Protocol Buffers compiler) sometimes needs to generate or overwrite 
 
 If a Java process from a previous run is still running, it may lock files that protoc wants to access.
 
-This results in errors like "file is locked" or build failures.
+This results in errors like "file is locked" or build failures. By killing any running Java processes first, I ensure protoc can run without conflicts.
 
-By killing any running Java processes first, I ensure protoc can run without conflicts.
 ---
 
