@@ -17,9 +17,10 @@ function App() {
         <JoinGame
           onJoined={(resp, playerNameInput) => {
             const myPlayerId =
-              resp.newplayeridsList?.[0] || resp.allplayeridsList?.[0];
+              resp.newPlayers?.[0]?.id || resp.allPlayers?.[0]?.id;
+
             setGameInfo({
-              gameId: resp.gameid,
+              gameId: resp.gameId,
               playerId: myPlayerId,
               playerName: playerNameInput,
             });

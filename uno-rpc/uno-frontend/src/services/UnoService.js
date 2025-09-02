@@ -3,6 +3,7 @@ import { JoinRequest, PlayRequest, GameStateRequest } from "../grpc/uno_pb";
 
 const client = new UnoServiceClient("/");
 
+// Join a game
 export const joinGame = (playerNames, gameId) => {
   const req = new JoinRequest();
   req.setPlayernamesList(playerNames);
@@ -12,15 +13,14 @@ export const joinGame = (playerNames, gameId) => {
     client.joinGame(req, {}, (err, resp) => {
       if (err) return reject(err);
 
-      // Get repeated PlayerInfo messages
-      const allPlayers = resp.getAllplayeridsList().map(player => ({
-        id: player.getId(),
-        name: player.getName(),
+      const allPlayers = resp.getAllplayeridsList().map(p => ({
+        id: p.getId(),
+        name: p.getName(),
       }));
 
-      const newPlayers = resp.getNewplayeridsList().map(player => ({
-        id: player.getId(),
-        name: player.getName(),
+      const newPlayers = resp.getNewplayeridsList().map(p => ({
+        id: p.getId(),
+        name: p.getName(),
       }));
 
       resolve({
@@ -33,23 +33,19 @@ export const joinGame = (playerNames, gameId) => {
   });
 };
 
-export const playCard = (gameId, playerId, card, playStream) => {
+// Play a card
+export const playCard = (gameId, playerId, card) => {
   const req = new PlayRequest();
   req.setGameid(gameId);
   req.setPlayerid(playerId);
   req.setCard(card);
 
-  if (playStream) {
-    playStream.write(req);
-  } else {
-    return new Promise((resolve, reject) => {
-      client.play(req, {}, (err, resp) => {
-        if (err) return reject(err);
-
-        resolve(resp.toObject());
-      });
+  return new Promise((resolve, reject) => {
+    client.play(req, {}, (err, resp) => {
+      if (err) return reject(err);
+      resolve(resp.toObject());
     });
-  }
+  });
 };
 
 export const subscribeGameState = (gameId, onData, onError, onEnd) => {
@@ -57,9 +53,29 @@ export const subscribeGameState = (gameId, onData, onError, onEnd) => {
   req.setGameid(gameId);
 
   const stream = client.gameState(req, {});
-  stream.on("data", onData);
-  stream.on("error", onError);
-  stream.on("end", onEnd);
+  stream.on("data", resp => {
+    const state = resp.toObject ? resp.toObject() : resp;
+
+    const protoPlayers = resp.getPlayersList ? resp.getPlayersList() : state.players || [];
+    const players = protoPlayers.map((p, i) => ({
+      id: p.getId ? p.getId() : `player-${i}`,
+      name: p.getName ? p.getName() : `Player ${i + 1}`,
+      cards: [], 
+    }));
+
+    const protoCards = resp.getCardsOnTableList ? resp.getCardsOnTableList() : state.cardsOnTable || [];
+    const cardsOnTable = protoCards.map((c, i) => {
+      const [color, value] = (c || "").split("_");
+      return { uid: `card_${i}`, color: color || "black", value: value || "" };
+    });
+
+    const currentPlayerId = resp.getCurrentPlayerId ? resp.getCurrentPlayerId() : state.currentPlayerId || null;
+
+    onData({ players, cardsOnTable, currentPlayerId });
+  });
+
+  stream.on("error", err => onError?.(err));
+  stream.on("end", () => onEnd?.());
 
   return stream;
 };

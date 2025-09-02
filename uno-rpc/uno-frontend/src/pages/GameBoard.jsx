@@ -8,7 +8,7 @@ import '../styles/common.css';
 const COLORS = ["red", "green", "yellow", "blue", "purple", "orange"];
 
 const GameBoard = ({ gameId, playerId, playerName }) => {
-  const [players, setPlayers] = useState([{ id: playerId, name: playerName, cards: [], color: COLORS[0] }]);
+  const [players, setPlayers] = useState([]);
   const [currentPlayer, setCurrentPlayer] = useState(null);
   const [cardsOnTable, setCardsOnTable] = useState([]);
   const [myCards, setMyCards] = useState([]);
@@ -19,39 +19,22 @@ const GameBoard = ({ gameId, playerId, playerName }) => {
     const stream = subscribeGameState(
       gameId,
       (resp) => {
-        const state = resp.toObject();
+        console.log("GameState response:", resp);
 
-        if (state.playersList?.length) {
-          setPlayers(
-            state.playersList.map((p, i) => ({
-              id: p.id || `player-${i}`, 
-              name: p.name && p.name.trim() !== "" ? p.name : `Player ${i + 1}`,
-              color: COLORS[i % COLORS.length],
-              cards: (p.cards || []).map((c, j) => ({
-                ...c,
-                uid: `${c.color}_${c.value}_${j}_${i}`, 
-              })),
-            }))
-          );
-        }
+        const normalizedPlayers = (resp.players || []).map((p, i) => ({
+          ...p,
+          color: COLORS[i % COLORS.length],
+        }));
 
-        const current = state.playersList?.find((p) => p.id === state.currentplayerid);
+        setPlayers(normalizedPlayers);
+
+        const current = normalizedPlayers.find(p => p.id === resp.currentPlayerId);
         setCurrentPlayer(current || null);
 
-        setCardsOnTable(
-          (state.cardsontableList || []).map((c, i) => ({
-            ...c,
-            uid: `${c.color}_${c.value}_${i}`,
-          }))
-        );
+        setCardsOnTable(resp.cardsOnTable || []);
 
-        const me = state.playersList?.find((p) => p.id === playerId);
-        setMyCards(
-          (me?.cards || []).map((c, i) => ({
-            ...c,
-            uid: `${c.color}_${c.value}_${i}`, 
-          }))
-        );
+        const me = normalizedPlayers.find(p => p.id === playerId);
+        setMyCards(me?.cards || []);
       },
       console.error,
       () => console.log("GameState stream ended")
@@ -61,9 +44,8 @@ const GameBoard = ({ gameId, playerId, playerName }) => {
   }, [gameId, playerId]);
 
   const isMyTurn = currentPlayer?.id === playerId;
-  const radius = Math.min(200, 250 - players.length * 10);
-
   const lastCard = cardsOnTable[cardsOnTable.length - 1];
+
   const isCardPlayable = (card) => {
     if (!lastCard) return true;
     return card.color === lastCard.color || card.value === lastCard.value || card.color === "black";
@@ -71,12 +53,13 @@ const GameBoard = ({ gameId, playerId, playerName }) => {
 
   const handlePlayCard = (card) => {
     if (!isMyTurn) return alert("Not your turn!");
-    playCard(gameId, playerId, card).catch(console.error);
+    playCard(gameId, playerId, `${card.color}_${card.value}`).catch(console.error);
   };
+
+  const radius = Math.min(200, 250 - players.length * 10);
 
   return (
     <div className={styles.gameWrapper}>
-      {/* Sidebar */}
       <div className={styles.sidebar}>
         <GameHeader
           players={players}
@@ -84,19 +67,16 @@ const GameBoard = ({ gameId, playerId, playerName }) => {
         />
       </div>
 
-      {/* Main Area */}
       <div className={styles.mainArea}>
         <div className={styles.roundTable}>
           {players.map((p, index) => {
             const angle = (360 / players.length) * index;
             return (
               <div
-                key={p.id || index} 
+                key={p.id}
                 className={`${styles.playerCircle} ${p.id === currentPlayer?.id ? styles.currentTurn : ""}`}
                 data-color={p.color}
-                style={{
-                  transform: `rotate(${angle}deg) translate(${radius}px) rotate(-${angle}deg)`,
-                }}
+                style={{ transform: `rotate(${angle}deg) translate(${radius}px) rotate(-${angle}deg)` }}
               >
                 <div>{p.name}</div>
                 <div>({p.cards?.length || 0})</div>
@@ -104,40 +84,30 @@ const GameBoard = ({ gameId, playerId, playerName }) => {
             );
           })}
 
-          {/* Cards on table */}
           <div className={styles.centerTable}>
-            {cardsOnTable.length > 0 ? (
-              cardsOnTable.map((c) => (
-                <CardButton
-                  key={c.uid} 
-                  card={`${c.color}_${c.value}`}
-                  disabled={!isMyTurn}
-                  playable={isMyTurn}
-                />
-              ))
-            ) : (
-              <p className={styles.noCardsText}>(none yet)</p>
-            )}
+            {cardsOnTable.length > 0 ? cardsOnTable.map(c => (
+              <CardButton
+                key={c.uid}
+                card={`${c.color}_${c.value}`}
+                disabled={!isMyTurn}
+                playable={isMyTurn}
+              />
+            )) : <p className={styles.noCardsText}>(none yet)</p>}
           </div>
         </div>
 
-        {/* Player's hand */}
         <div className={styles.handSection}>
           <h3>Your Hand:</h3>
           <div className={styles.handCardsRow}>
-            {myCards.length > 0 ? (
-              myCards.map((c) => (
-                <CardButton
-                  key={c.uid} 
-                  card={`${c.color}_${c.value}`}
-                  onClick={() => handlePlayCard(c)}
-                  disabled={!isMyTurn}
-                  playable={isMyTurn && isCardPlayable(c)}
-                />
-              ))
-            ) : (
-              <p className={styles.noCardsText}>(no cards yet)</p>
-            )}
+            {myCards.length > 0 ? myCards.map((c, i) => (
+              <CardButton
+                key={`hand_${i}`}
+                card={`${c.color}_${c.value}`}
+                onClick={() => handlePlayCard(c)}
+                disabled={!isMyTurn}
+                playable={isMyTurn && isCardPlayable(c)}
+              />
+            )) : <p className={styles.noCardsText}>(no cards yet)</p>}
           </div>
         </div>
       </div>
