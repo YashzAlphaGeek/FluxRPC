@@ -22,6 +22,33 @@ h3 {
   user-select: none;
 }
 
+.gameIdContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.gameId {
+  font-weight: 500;
+  color: #f5a623;
+}
+
+.copyButton {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: transform 0.2s;
+}
+
+.copyButton:hover {
+  transform: scale(1.2);
+}
+
+
+
 .playerList {
   list-style: none;
   padding: 0;

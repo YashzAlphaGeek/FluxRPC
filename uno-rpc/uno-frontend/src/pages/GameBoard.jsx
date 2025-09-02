@@ -64,6 +64,7 @@ const GameBoard = ({ gameId, playerId, playerName }) => {
         <GameHeader
           players={players}
           currentPlayer={currentPlayer || { id: playerId, name: playerName }}
+           gameId={gameId}
         />
       </div>
 

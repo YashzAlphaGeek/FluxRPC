@@ -3,7 +3,7 @@ package com.unogame.uno_backend.service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
+import java.util.Random;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,17 +17,41 @@ public class GameService {
 
     private final GameSessionRepository gameSessionRepository;
     private static final int MAX_PLAYERS = 4;
+    private static final String CHAR_POOL = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // exclude confusing chars
+    private static final int GAME_ID_LENGTH = 5;
+    private final Random random = new Random();
 
     public GameService(GameSessionRepository gameSessionRepository) {
         this.gameSessionRepository = gameSessionRepository;
     }
 
+    /** Generate a random 5-character alphanumeric code */
+    private String generateGameCode() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < GAME_ID_LENGTH; i++) {
+            int idx = random.nextInt(CHAR_POOL.length());
+            sb.append(CHAR_POOL.charAt(idx));
+        }
+        return sb.toString();
+    }
+
     @Transactional
     public String createGame(Player firstPlayer) {
-        String gameId = UUID.randomUUID().toString();
+        String gameId;
+        int attempts = 0;
+
+        do {
+            gameId = generateGameCode();
+            attempts++;
+            if (attempts > 10) {
+                throw new IllegalStateException("Unable to generate unique game ID after 10 attempts");
+            }
+        } while (gameSessionRepository.existsById(gameId));
+
         GameSession gameSession = new GameSession(gameId);
         gameSession.addPlayer(firstPlayer);
         gameSessionRepository.save(gameSession);
+
         return gameId;
     }
 
