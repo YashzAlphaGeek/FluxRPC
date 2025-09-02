@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>UNO Game Sequence</title>
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true, theme: 'default', flowchart: { curve: 'basis' } });
+  </script>
+  <style>
+    body {
+      margin: 0;
+      padding: 10px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      background-color: #f4f4f9; /* Light gray background */
+    }
+
+    .mermaid {
+      width: 600px; /* Adjusted width for embedding */
+      padding: 15px;
+      background: #ffffff; /* White background for the diagram */
+      border: 1px solid #e0e0e0; /* Light gray border */
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    }
+
+    /* Arrow animations */
+    .mermaid svg path {
+      stroke-dasharray: 6, 12;
+      stroke-dashoffset: 0;
+      animation: arrowMove 1.5s linear infinite;
+      stroke-width: 2px;
+    }
+
+    @keyframes arrowMove {
+      0% { stroke-dashoffset: 0; }
+      100% { stroke-dashoffset: 18; }
+    }
+
+    /* Arrow colors for call types */
+    .mermaid svg path:nth-of-type(1),
+    .mermaid svg path:nth-of-type(2) { stroke: #f5a623; }  /* Unary */
+    .mermaid svg path:nth-of-type(3),
+    .mermaid svg path:nth-of-type(4) { stroke: #50e3c2; }  /* Server streaming */
+    .mermaid svg path:nth-of-type(5),
+    .mermaid svg path:nth-of-type(6),
+    .mermaid svg path:nth-of-type(7) { stroke: #e94e77; }  /* Bidirectional */
+
+    /* Staggered animation */
+    .mermaid svg path:nth-of-type(1) { animation-delay: 0s; }
+    .mermaid svg path:nth-of-type(2) { animation-delay: 0.1s; }
+    .mermaid svg path:nth-of-type(3) { animation-delay: 0.2s; }
+    .mermaid svg path:nth-of-type(4) { animation-delay: 0.3s; }
+    .mermaid svg path:nth-of-type(5) { animation-delay: 0.4s; }
+    .mermaid svg path:nth-of-type(6) { animation-delay: 0.5s; }
+    .mermaid svg path:nth-of-type(7) { animation-delay: 0.6s; }
+
+    .mermaid text {
+      fill: #333; /* Dark gray text for readability */
+      font-weight: 500;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="mermaid">
+sequenceDiagram
+    autonumber
+    participant C as Client
+    participant S as Server
+
+    %% Step 1: Join Game (Unary)
+    C->>S: JoinGame(playerName)
+    note right of C: Unary call: single request → single response
+    S-->>C: JoinResponse(players, gameId)
+
+    %% Step 2: Subscribe to GameState (Server Streaming)
+    C->>S: GameState(gameId)
+    note right of S: Server streams updates
+    S-->>C: GameStateUpdate(newPlayerJoined)
+
+    %% Step 3: Play Cards (Bidirectional)
+    loop Play card
+        C->>S: PlayCard(card)
+        note right of C: Bidirectional streaming: send card, receive response
+        S-->>C: PlayResponse(status, nextPlayer)
+        S-->>C: GameStateUpdate(updatedTable, turn)
+        note right of C: Table updates in real-time
+    end
+
+    %% Step 4: Turn Changes
+    S-->>C: GameStateUpdate(currentPlayerChanged)
+    note right of C: Turn indicator updated
+  </div>
+</body>
+</html>
