@@ -44,6 +44,12 @@ The flow of **gRPC** calls in UNO-RPC—Unary (Join Game), Server Streaming (Gam
 
 <img width="473" height="234" alt="image" src="https://github.com/user-attachments/assets/f31195f4-5df5-44a1-89e9-98593c814953" />
 
+# UNO-RPC: UNO Game gRPC Flow: Join, Play, and Real-Time Updates
+
+![2025-09-03_00h25_53-ezgif com-cut](https://github.com/user-attachments/assets/34cedb87-d673-48ad-b866-8a2a5bfd760b)
+
+# UNO Game Flow: Browser → Envoy → Backend
+
 ```mermaid
 %%{init: {"sequence": {"showSequenceNumbers": true, "actorMargin": 50, "messageMargin": 20}}}%%
 sequenceDiagram
