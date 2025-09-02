@@ -8,7 +8,7 @@ const GameHeader = ({ players, currentPlayer }) => {
       <ul className={styles.playerList}>
         {players.map((p) => (
           <li
-            key={p.id} // unique key
+            key={p.id} 
             className={`${styles.playerItem} ${p.id === currentPlayer?.id ? styles.currentTurn : ""}`}
             style={{
               '--player-color': p.color || "#4a90e2",

@@ -1,5 +1,6 @@
 package com.unogame.uno_backend.model;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -9,10 +10,12 @@ import jakarta.persistence.Id;
 public class Card {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID) // UUID primary key
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     private String color;
+
+    @Column(name = "card_value")
     private String value;
 
     protected Card() {}
