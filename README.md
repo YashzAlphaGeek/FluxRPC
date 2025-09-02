@@ -1,6 +1,6 @@
 # FluxRPC: A gRPC Kickstart
 
-The flow of gRPC calls—Unary, Server Streaming, Client Streaming, and BiDi Streaming—through a server interceptor to the service implementation and back in a **Quarkus**-based backend.
+The flow of **gRPC** calls—Unary, Server Streaming, Client Streaming, and BiDi Streaming—through a server interceptor to the service implementation and back in a **Quarkus**-based backend.
 
 ```mermaid
 %% gRPC Call Flow
@@ -40,7 +40,7 @@ flowchart TD
 
 # UNO-RPC: Multiplayer Turn-Based Game with gRPC
 
-The flow of gRPC calls in UNO-RPC—Unary (Join Game), Server Streaming (Game State), and BiDi Streaming (Play Card)—through server interceptors in the **Spring Boot** backend services to the clients..
+The flow of **gRPC** calls in UNO-RPC—Unary (Join Game), Server Streaming (Game State), and BiDi Streaming (Play Card)—through server interceptors in the **Spring Boot** backend services to the clients..
 
 <img width="473" height="234" alt="image" src="https://github.com/user-attachments/assets/f31195f4-5df5-44a1-89e9-98593c814953" />
 
