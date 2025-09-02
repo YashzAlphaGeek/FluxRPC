@@ -43,20 +43,38 @@ flowchart TD
 The flow of gRPC calls in UNO-RPC—Unary (Join Game), Server Streaming (Game State), and BiDi Streaming (Play Card)—through server interceptors in the **Spring Boot** backend services to the clients..
 
 ```mermaid
+%%{init: {"sequence": {"showSequenceNumbers": true, "actorMargin": 50, "messageMargin": 20}}}%%
 sequenceDiagram
+    autonumber
     participant Player as User (Player in Browser)
     participant Frontend as React App
     participant Envoy as Envoy Proxy
     participant Backend as Uno Game Service
 
-    Player->>Frontend: Clicks "Join Game" / "Play Card"
+    %% Step 1: Player joins game
+    Player->>Frontend: Clicks "Join Game"
+    Note right of Frontend: Prepare gRPC-Web request
     Frontend->>Envoy: Sends gRPC-Web call
-    Envoy->>Backend: Forwards as native gRPC
-    Backend-->>Envoy: Game logic response (next player, card validation, etc.)
-    Envoy-->>Frontend: Translates to gRPC-Web
-    Frontend-->>Player: Updates UI (turn, cards, state)
+    Note right of Envoy: Translate to native gRPC
+    Envoy->>Backend: Forward gRPC request
+    Note right of Backend: Process join game logic
+    Backend-->>Envoy: Response (success, initial cards)
+    Envoy-->>Frontend: Translate back to gRPC-Web
+    Frontend-->>Player: Update UI (show hand)
 
-    Note over Backend: Central game logic & state management  
+    %% Step 2: Player plays a card
+    Player->>Frontend: Plays a card
+    Note right of Frontend: Validate locally
+    Frontend->>Envoy: Sends gRPC-Web call
+    Note right of Envoy: Forward to backend
+    Envoy->>Backend: Validate card & update game state
+    Note right of Backend: Update turn, notify next player
+    Backend-->>Envoy: Response (card valid, next player)
+    Envoy-->>Frontend: Translate to gRPC-Web
+    Frontend-->>Player: Update UI (cards & turn)
+    
+    %% Notes for context
+    Note over Backend: Central game logic & state management
     Note over Envoy: Acts as bridge between Browser and Backend
 ```
 
