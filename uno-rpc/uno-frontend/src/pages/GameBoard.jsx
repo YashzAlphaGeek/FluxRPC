@@ -24,12 +24,12 @@ const GameBoard = ({ gameId, playerId, playerName }) => {
         if (state.playersList?.length) {
           setPlayers(
             state.playersList.map((p, i) => ({
-              id: p.id,
+              id: p.id || `player-${i}`, 
               name: p.name && p.name.trim() !== "" ? p.name : `Player ${i + 1}`,
               color: COLORS[i % COLORS.length],
               cards: (p.cards || []).map((c, j) => ({
                 ...c,
-                uid: `${c.color}_${c.value}_${j}_${i}`, // unique per card
+                uid: `${c.color}_${c.value}_${j}_${i}`, 
               })),
             }))
           );
@@ -41,7 +41,7 @@ const GameBoard = ({ gameId, playerId, playerName }) => {
         setCardsOnTable(
           (state.cardsontableList || []).map((c, i) => ({
             ...c,
-            uid: `${c.color}_${c.value}_${i}`, // unique key for table cards
+            uid: `${c.color}_${c.value}_${i}`,
           }))
         );
 
@@ -49,7 +49,7 @@ const GameBoard = ({ gameId, playerId, playerName }) => {
         setMyCards(
           (me?.cards || []).map((c, i) => ({
             ...c,
-            uid: `${c.color}_${c.value}_${i}`, // unique key for hand cards
+            uid: `${c.color}_${c.value}_${i}`, 
           }))
         );
       },
@@ -91,7 +91,7 @@ const GameBoard = ({ gameId, playerId, playerName }) => {
             const angle = (360 / players.length) * index;
             return (
               <div
-                key={p.id} // unique key for each player
+                key={p.id || index} 
                 className={`${styles.playerCircle} ${p.id === currentPlayer?.id ? styles.currentTurn : ""}`}
                 data-color={p.color}
                 style={{
@@ -109,7 +109,7 @@ const GameBoard = ({ gameId, playerId, playerName }) => {
             {cardsOnTable.length > 0 ? (
               cardsOnTable.map((c) => (
                 <CardButton
-                  key={c.uid} // unique key
+                  key={c.uid} 
                   card={`${c.color}_${c.value}`}
                   disabled={!isMyTurn}
                   playable={isMyTurn}
@@ -128,7 +128,7 @@ const GameBoard = ({ gameId, playerId, playerName }) => {
             {myCards.length > 0 ? (
               myCards.map((c) => (
                 <CardButton
-                  key={c.uid} // unique key
+                  key={c.uid} 
                   card={`${c.color}_${c.value}`}
                   onClick={() => handlePlayCard(c)}
                   disabled={!isMyTurn}
