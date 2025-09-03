@@ -1,5 +1,7 @@
 package com.unogame.uno_backend.model;
 
+import java.util.Objects;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -43,5 +45,25 @@ public class Card {
 
     public void setValue(String value) {
         this.value = value;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Card card)) return false;
+        return Objects.equals(color, card.color) && Objects.equals(value, card.value);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(color, value);
+    }
+
+    @Override
+    public String toString() {
+        return "Card{" +
+                "color='" + color + '\'' +
+                ", value='" + value + '\'' +
+                '}';
     }
 }

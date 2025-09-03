@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.unogame.uno_backend.model.Card;
 import com.unogame.uno_backend.model.GameSession.PlayResult;
 import com.unogame.uno_backend.model.Player;
 import com.unogame.uno_backend.service.GameService;
@@ -37,9 +38,9 @@ public class UnoServiceImpl extends UnoServiceGrpc.UnoServiceImplBase {
     }
 
     @Override
-    public void joinGame(JoinRequest request, StreamObserver<JoinResponse> responseObserver) {
+    public void joinGame(JoinRequest request,
+            StreamObserver<com.unogame.uno_backend.grpc.JoinResponse> responseObserver) {
         List<String> playerNames = request.getPlayerNamesList();
-
         if (playerNames.isEmpty()) {
             responseObserver.onError(Status.INVALID_ARGUMENT
                     .withDescription("At least one player name must be provided")
@@ -63,17 +64,19 @@ public class UnoServiceImpl extends UnoServiceGrpc.UnoServiceImplBase {
             playersToJoin.add(userService.registerUser(name));
         }
 
+        // Internal DTO from service
         GameService.JoinResponse serviceResponse = gameService.joinPlayers(gameId, playersToJoin);
 
+        // Convert to gRPC JoinResponse
         List<com.unogame.uno_backend.grpc.PlayerInfo> allPlayersGrpc = serviceResponse.allPlayers().stream()
-                .map(this::toGrpcPlayerInfo)
+                .map(p -> toGrpcPlayerInfo(p, gameId))
                 .collect(Collectors.toList());
 
         List<com.unogame.uno_backend.grpc.PlayerInfo> newPlayersGrpc = serviceResponse.newPlayers().stream()
-                .map(this::toGrpcPlayerInfo)
+                .map(p -> toGrpcPlayerInfo(p, gameId))
                 .collect(Collectors.toList());
 
-        JoinResponse grpcResponse = JoinResponse.newBuilder()
+        com.unogame.uno_backend.grpc.JoinResponse grpcResponse = com.unogame.uno_backend.grpc.JoinResponse.newBuilder()
                 .setGameId(gameId)
                 .setMessage(newGame ? "Game created and players joined" : "Players joined successfully")
                 .addAllAllPlayerIds(allPlayersGrpc)
@@ -91,26 +94,27 @@ public class UnoServiceImpl extends UnoServiceGrpc.UnoServiceImplBase {
         return new StreamObserver<>() {
             @Override
             public void onNext(PlayRequest request) {
-                if (request.getGameId().isEmpty() || request.getPlayerId().isEmpty() || request.getCard().isEmpty()) {
+                if (request.getGameId().isEmpty() || request.getPlayerId().isEmpty() || request.getCard() == null) {
                     responseObserver.onError(Status.INVALID_ARGUMENT
                             .withDescription("Game ID, Player ID, and Card must be provided")
                             .asRuntimeException());
                     return;
                 }
 
-                // Play the card
-                PlayResult result = gameService.playCard(request.getGameId(), request.getPlayerId(), request.getCard());
+                // Convert gRPC Card message to internal Card
+                Card card = new Card(request.getCard().getColor(), request.getCard().getValue());
+
+                PlayResult result = gameService.playCard(request.getGameId(), request.getPlayerId(), card);
                 PlayStatus status = mapStatus(result.getStatus());
 
                 PlayResponse response = PlayResponse.newBuilder()
-                        .setMessage(request.getPlayerId() + " played " + request.getCard())
+                        .setMessage(request.getPlayerId() + " played " + card.getColor() + ":" + card.getValue())
                         .setNextPlayerId(result.getNextPlayerId() != null ? result.getNextPlayerId() : "")
                         .setStatus(status)
                         .build();
 
                 responseObserver.onNext(response);
-
-                broadcastGameState(request.getGameId(), status, request.getPlayerId(), request.getCard());
+                broadcastGameState(request.getGameId(), status);
             }
 
             @Override
@@ -129,41 +133,57 @@ public class UnoServiceImpl extends UnoServiceGrpc.UnoServiceImplBase {
     public void gameState(GameStateRequest request, StreamObserver<GameStateResponse> responseObserver) {
         String gameId = request.getGameId();
         gameStateObservers.computeIfAbsent(gameId, k -> new CopyOnWriteArrayList<>()).add(responseObserver);
-        sendGameStateToObserver(gameId, responseObserver, PlayStatus.OK, null, null);
+        sendGameStateToObserver(gameId, responseObserver, PlayStatus.OK);
     }
 
     private void sendGameStateToObserver(String gameId, StreamObserver<GameStateResponse> observer,
-                                         PlayStatus lastMoveStatus, String lastPlayerId, String lastCard) {
-
+            PlayStatus lastMoveStatus) {
         List<PlayerInfo> players = gameService.getPlayersInGame(gameId);
-        List<String> cards = gameService.getCardsOnTable(gameId);
+        List<Card> tableCards = gameService.getCardsOnTable(gameId); // Already List<Card>
         String currentPlayer = gameService.getCurrentPlayerId(gameId);
 
         List<com.unogame.uno_backend.grpc.PlayerInfo> playersGrpc = players.stream()
-                .map(this::toGrpcPlayerInfo)
+                .map(p -> toGrpcPlayerInfo(p, gameId))
                 .collect(Collectors.toList());
 
-        GameStateResponse.Builder builder = GameStateResponse.newBuilder()
+        List<com.unogame.uno_backend.grpc.Card> cardsGrpc = tableCards.stream()
+                .map(c -> com.unogame.uno_backend.grpc.Card.newBuilder()
+                        .setColor(c.getColor())
+                        .setValue(c.getValue())
+                        .build())
+                .collect(Collectors.toList());
+
+        GameStateResponse response = GameStateResponse.newBuilder()
                 .setGameId(gameId)
                 .addAllPlayers(playersGrpc)
-                .addAllCardsOnTable(cards)
+                .addAllCardsOnTable(cardsGrpc)
                 .setCurrentPlayerId(currentPlayer != null ? currentPlayer : "")
-                .setLastMoveStatus(lastMoveStatus);
+                .setLastMoveStatus(lastMoveStatus)
+                .build();
 
-        observer.onNext(builder.build());
+        observer.onNext(response);
     }
 
-    private void broadcastGameState(String gameId, PlayStatus lastMoveStatus, String lastPlayerId, String lastCard) {
+    private void broadcastGameState(String gameId, PlayStatus lastMoveStatus) {
         List<StreamObserver<GameStateResponse>> observers = gameStateObservers.getOrDefault(gameId, List.of());
         for (StreamObserver<GameStateResponse> observer : observers) {
-            sendGameStateToObserver(gameId, observer, lastMoveStatus, lastPlayerId, lastCard);
+            sendGameStateToObserver(gameId, observer, lastMoveStatus);
         }
     }
 
-    private com.unogame.uno_backend.grpc.PlayerInfo toGrpcPlayerInfo(PlayerInfo p) {
+    private com.unogame.uno_backend.grpc.PlayerInfo toGrpcPlayerInfo(PlayerInfo p, String gameId) {
+        List<Card> hand = gameService.getPlayerHand(gameId, p.id());
+        List<com.unogame.uno_backend.grpc.Card> handGrpc = hand.stream()
+                .map(c -> com.unogame.uno_backend.grpc.Card.newBuilder()
+                        .setColor(c.getColor())
+                        .setValue(c.getValue())
+                        .build())
+                .collect(Collectors.toList());
+
         return com.unogame.uno_backend.grpc.PlayerInfo.newBuilder()
                 .setId(p.id())
                 .setName(p.name())
+                .addAllHand(handGrpc)
                 .build();
     }
 

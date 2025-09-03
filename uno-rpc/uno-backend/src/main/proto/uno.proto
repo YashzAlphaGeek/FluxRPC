@@ -18,6 +18,7 @@ message JoinRequest {
 message PlayerInfo {
     string id = 1;
     string name = 2;
+    repeated Card hand = 3;  // Player's hand as list of Card
 }
 
 message JoinResponse {
@@ -30,7 +31,7 @@ message JoinResponse {
 message PlayRequest {
     string gameId = 1;
     string playerId = 2;
-    string card = 3;
+    Card card = 3;  
 }
 
 message PlayResponse {
@@ -46,10 +47,15 @@ message GameStateRequest {
 message GameStateResponse {
     string gameId = 1;
     repeated PlayerInfo players = 2;
-    repeated string cardsOnTable = 3;
+    repeated Card cardsOnTable = 3;        
     string currentPlayerId = 4;
     PlayStatus lastMoveStatus = 5;
-    string lastMoveInfo = 6;  
+    string lastMoveInfo = 6;               
+}
+
+message Card {
+  string color = 1;
+  string value = 2;
 }
 
 enum PlayStatus {
