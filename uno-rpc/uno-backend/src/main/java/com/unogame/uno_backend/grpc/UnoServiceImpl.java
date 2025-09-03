@@ -1,6 +1,5 @@
 package com.unogame.uno_backend.grpc;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -11,6 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.util.JsonFormat;
 import com.unogame.uno_backend.model.Card;
 import com.unogame.uno_backend.model.GameSession.PlayResult;
 import com.unogame.uno_backend.model.Player;
@@ -38,8 +39,7 @@ public class UnoServiceImpl extends UnoServiceGrpc.UnoServiceImplBase {
     }
 
     @Override
-    public void joinGame(JoinRequest request,
-            StreamObserver<com.unogame.uno_backend.grpc.JoinResponse> responseObserver) {
+    public void joinGame(JoinRequest request, StreamObserver<JoinResponse> responseObserver) {
         List<String> playerNames = request.getPlayerNamesList();
         if (playerNames.isEmpty()) {
             responseObserver.onError(Status.INVALID_ARGUMENT
@@ -59,15 +59,12 @@ public class UnoServiceImpl extends UnoServiceGrpc.UnoServiceImplBase {
             gameId = request.getGameId();
         }
 
-        List<Player> playersToJoin = new ArrayList<>();
-        for (String name : playerNames) {
-            playersToJoin.add(userService.registerUser(name));
-        }
+        List<Player> playersToJoin = playerNames.stream()
+                .map(userService::registerUser)
+                .toList();
 
-        // Internal DTO from service
         GameService.JoinResponse serviceResponse = gameService.joinPlayers(gameId, playersToJoin);
 
-        // Convert to gRPC JoinResponse
         List<com.unogame.uno_backend.grpc.PlayerInfo> allPlayersGrpc = serviceResponse.allPlayers().stream()
                 .map(p -> toGrpcPlayerInfo(p, gameId))
                 .collect(Collectors.toList());
@@ -76,7 +73,7 @@ public class UnoServiceImpl extends UnoServiceGrpc.UnoServiceImplBase {
                 .map(p -> toGrpcPlayerInfo(p, gameId))
                 .collect(Collectors.toList());
 
-        com.unogame.uno_backend.grpc.JoinResponse grpcResponse = com.unogame.uno_backend.grpc.JoinResponse.newBuilder()
+        JoinResponse grpcResponse = JoinResponse.newBuilder()
                 .setGameId(gameId)
                 .setMessage(newGame ? "Game created and players joined" : "Players joined successfully")
                 .addAllAllPlayerIds(allPlayersGrpc)
@@ -86,6 +83,7 @@ public class UnoServiceImpl extends UnoServiceGrpc.UnoServiceImplBase {
         responseObserver.onNext(grpcResponse);
         responseObserver.onCompleted();
 
+        broadcastGameState(gameId, PlayStatus.OK);
         logger.info("Players {} joined game {}", playerNames, gameId);
     }
 
@@ -101,9 +99,7 @@ public class UnoServiceImpl extends UnoServiceGrpc.UnoServiceImplBase {
                     return;
                 }
 
-                // Convert gRPC Card message to internal Card
                 Card card = new Card(request.getCard().getColor(), request.getCard().getValue());
-
                 PlayResult result = gameService.playCard(request.getGameId(), request.getPlayerId(), card);
                 PlayStatus status = mapStatus(result.getStatus());
 
@@ -137,9 +133,9 @@ public class UnoServiceImpl extends UnoServiceGrpc.UnoServiceImplBase {
     }
 
     private void sendGameStateToObserver(String gameId, StreamObserver<GameStateResponse> observer,
-            PlayStatus lastMoveStatus) {
+                                         PlayStatus lastMoveStatus) {
         List<PlayerInfo> players = gameService.getPlayersInGame(gameId);
-        List<Card> tableCards = gameService.getCardsOnTable(gameId); // Already List<Card>
+        List<Card> tableCards = gameService.getCardsOnTable(gameId);
         String currentPlayer = gameService.getCurrentPlayerId(gameId);
 
         List<com.unogame.uno_backend.grpc.PlayerInfo> playersGrpc = players.stream()
@@ -147,9 +143,10 @@ public class UnoServiceImpl extends UnoServiceGrpc.UnoServiceImplBase {
                 .collect(Collectors.toList());
 
         List<com.unogame.uno_backend.grpc.Card> cardsGrpc = tableCards.stream()
-                .map(c -> com.unogame.uno_backend.grpc.Card.newBuilder()
-                        .setColor(c.getColor())
-                        .setValue(c.getValue())
+                .map(Card::toDTO)
+                .map(dto -> com.unogame.uno_backend.grpc.Card.newBuilder()
+                        .setColor(dto.color())
+                        .setValue(dto.value())
                         .build())
                 .collect(Collectors.toList());
 
@@ -162,6 +159,8 @@ public class UnoServiceImpl extends UnoServiceGrpc.UnoServiceImplBase {
                 .build();
 
         observer.onNext(response);
+
+        logger.info("GameState JSON: {}", toJson(response));
     }
 
     private void broadcastGameState(String gameId, PlayStatus lastMoveStatus) {
@@ -174,9 +173,10 @@ public class UnoServiceImpl extends UnoServiceGrpc.UnoServiceImplBase {
     private com.unogame.uno_backend.grpc.PlayerInfo toGrpcPlayerInfo(PlayerInfo p, String gameId) {
         List<Card> hand = gameService.getPlayerHand(gameId, p.id());
         List<com.unogame.uno_backend.grpc.Card> handGrpc = hand.stream()
-                .map(c -> com.unogame.uno_backend.grpc.Card.newBuilder()
-                        .setColor(c.getColor())
-                        .setValue(c.getValue())
+                .map(Card::toDTO)
+                .map(dto -> com.unogame.uno_backend.grpc.Card.newBuilder()
+                        .setColor(dto.color())
+                        .setValue(dto.value())
                         .build())
                 .collect(Collectors.toList());
 
@@ -194,5 +194,16 @@ public class UnoServiceImpl extends UnoServiceGrpc.UnoServiceImplBase {
             case INVALID_PLAYER -> PlayStatus.INVALID_PLAYER;
             default -> PlayStatus.GAME_NOT_FOUND;
         };
+    }
+
+    public static String toJson(GameStateResponse response) {
+        try {
+            return JsonFormat.printer()
+                    .includingDefaultValueFields()
+                    .preservingProtoFieldNames()
+                    .print(response);
+        } catch (InvalidProtocolBufferException e) {
+            return "{\"error\":\"Failed to convert to JSON\"}";
+        }
     }
 }

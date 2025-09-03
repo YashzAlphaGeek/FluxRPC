@@ -45,7 +45,7 @@ public class GameService {
         } while (gameSessionRepository.existsById(gameId));
 
         GameSession game = new GameSession(gameId);
-        game.addPlayer(firstPlayer);
+        game.addPlayer(firstPlayer); 
         gameSessionRepository.save(game);
         return gameId;
     }
@@ -58,7 +58,7 @@ public class GameService {
         List<PlayerInfo> newPlayers = new ArrayList<>();
         for (Player player : players) {
             if (!game.hasPlayer(player.getPlayerId()) && !game.isFull(MAX_PLAYERS)) {
-                game.addPlayer(player);
+                game.addPlayer(player); 
                 newPlayers.add(new PlayerInfo(player.getPlayerId(), player.getName()));
             }
         }
@@ -91,7 +91,7 @@ public class GameService {
     @Transactional(readOnly = true)
     public List<Card> getCardsOnTable(String gameId) {
         return gameSessionRepository.findById(gameId)
-                .map(GameSession::getCardsOnTable) 
+                .map(GameSession::getCardsOnTable)
                 .orElse(List.of());
     }
 

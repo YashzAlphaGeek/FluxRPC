@@ -66,4 +66,11 @@ public class Card {
                 ", value='" + value + '\'' +
                 '}';
     }
+
+    public CardDTO toDTO() {
+        return new CardDTO(this.color, this.value);
+    }
+
+    public record CardDTO(String color, String value) {}
 }
+
