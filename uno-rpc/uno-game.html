@@ -15,19 +15,18 @@
       display: flex;
       justify-content: center;
       align-items: flex-start;
-      background-color: #f4f4f9; /* Light gray background */
+      background-color: #f4f4f9;
     }
 
     .mermaid {
-      width: 600px; /* Adjusted width for embedding */
+      width: 600px;
       padding: 15px;
-      background: #ffffff; /* White background for the diagram */
-      border: 1px solid #e0e0e0; /* Light gray border */
+      background: #ffffff;
+      border: 1px solid #e0e0e0;
       border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     }
 
-    /* Arrow animations */
     .mermaid svg path {
       stroke-dasharray: 6, 12;
       stroke-dashoffset: 0;
@@ -40,26 +39,8 @@
       100% { stroke-dashoffset: 18; }
     }
 
-    /* Arrow colors for call types */
-    .mermaid svg path:nth-of-type(1),
-    .mermaid svg path:nth-of-type(2) { stroke: #f5a623; }  /* Unary */
-    .mermaid svg path:nth-of-type(3),
-    .mermaid svg path:nth-of-type(4) { stroke: #50e3c2; }  /* Server streaming */
-    .mermaid svg path:nth-of-type(5),
-    .mermaid svg path:nth-of-type(6),
-    .mermaid svg path:nth-of-type(7) { stroke: #e94e77; }  /* Bidirectional */
-
-    /* Staggered animation */
-    .mermaid svg path:nth-of-type(1) { animation-delay: 0s; }
-    .mermaid svg path:nth-of-type(2) { animation-delay: 0.1s; }
-    .mermaid svg path:nth-of-type(3) { animation-delay: 0.2s; }
-    .mermaid svg path:nth-of-type(4) { animation-delay: 0.3s; }
-    .mermaid svg path:nth-of-type(5) { animation-delay: 0.4s; }
-    .mermaid svg path:nth-of-type(6) { animation-delay: 0.5s; }
-    .mermaid svg path:nth-of-type(7) { animation-delay: 0.6s; }
-
     .mermaid text {
-      fill: #333; /* Dark gray text for readability */
+      fill: #333;
       font-weight: 500;
       font-size: 12px;
     }
@@ -76,11 +57,18 @@ sequenceDiagram
     C->>S: JoinGame(playerName)
     note right of C: Unary call: single request → single response
     S-->>C: JoinResponse(players, gameId)
+    note right of C: Lobby view: hands empty
 
     %% Step 2: Subscribe to GameState (Server Streaming)
     C->>S: GameState(gameId)
     note right of S: Server streams updates
     S-->>C: GameStateUpdate(newPlayerJoined)
+
+    %% Step 2.5: Start Game (Unary)
+    C->>S: StartGame(gameId)
+    note right of C: Deals initial hands to players
+    S-->>C: StartGameResponse(gameStarted)
+    S-->>C: GameStateUpdate(full state with hands)
 
     %% Step 3: Play Cards (Bidirectional)
     loop Play card
