@@ -6,13 +6,24 @@ option java_outer_classname = "UnoProto";
 
 service UnoService {
     rpc JoinGame(JoinRequest) returns (JoinResponse);
+    rpc StartGame(StartGameRequest) returns (StartGameResponse); 
     rpc PlayCard(stream PlayRequest) returns (stream PlayResponse);
     rpc GameState(GameStateRequest) returns (stream GameStateResponse);
 }
 
+// --- Requests & Responses ---
+
 message JoinRequest {
     repeated string playerNames = 1;
     string gameId = 2;
+}
+
+message StartGameRequest {
+    string gameId = 1;
+}
+
+message StartGameResponse {
+    string message = 1;
 }
 
 message PlayerInfo {

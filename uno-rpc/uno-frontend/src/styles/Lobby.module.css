@@ -1,0 +1,131 @@
+.lobbyWrapper {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 20px;
+  background: #1f2937;
+  color: #fff;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
+
+.playersGrid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+  margin: 20px 0;
+}
+
+.playerCard {
+  background: #374151;
+  padding: 10px 16px;
+  border-radius: 12px;
+  width: 100px;
+  text-align: center;
+  transform: scale(1);
+  opacity: 1;
+  transition: transform 0.3s ease, opacity 0.3s ease, box-shadow 0.3s ease;
+}
+
+.joinAnimation {
+  animation: popIn 0.5s ease forwards;
+}
+
+@keyframes popIn {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  80% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.you {
+  border: 2px solid #facc15;
+  box-shadow: 0 0 10px #facc15;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 8px auto;
+  border-radius: 50%;
+  background: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.playerName {
+  font-weight: 500;
+}
+
+.centerInfo {
+  margin: 12px 0;
+  font-weight: bold;
+}
+
+.startButton {
+  margin-top: 16px;
+  padding: 12px 20px;
+  background: #10b981;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.startButton:disabled {
+  background: #6b7280;
+  cursor: not-allowed;
+  animation: pulse 1.2s infinite alternate;
+}
+
+.startButton:not(:disabled):hover {
+  background: #059669;
+  transform: scale(1.05);
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+  }
+  100% {
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+  }
+}
+
+.copyButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  margin-left: 6px;
+  color: #facc15;
+  transition: transform 0.2s;
+}
+
+.copyButton:hover {
+  transform: scale(1.2);
+}
+
+.copiedText {
+  margin-left: 8px;
+  font-size: 14px;
+  color: #10b981;
+  font-weight: bold;
+}
+

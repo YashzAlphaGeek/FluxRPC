@@ -4,7 +4,7 @@ import styles from "../styles/CardButton.module.css";
 const CardButton = ({ card, onClick, disabled, playable }) => {
   if (!card) return null;
 
-  const { color, value } = card; 
+  const { color, value } = card;
 
   const colorMap = {
     red: "#e74c3c",
@@ -16,8 +16,8 @@ const CardButton = ({ card, onClick, disabled, playable }) => {
     orange: "#e67e22",
   };
 
-  const bgColor = colorMap[color] || "#ccc";
-  const textColor = color === "yellow" ? "#333" : "#fff";
+  const bgColor = colorMap[color.toLowerCase()] || "#ccc";
+  const textColor = color.toLowerCase() === "yellow" ? "#333" : "#fff";
 
   return (
     <button
@@ -29,11 +29,18 @@ const CardButton = ({ card, onClick, disabled, playable }) => {
         color: textColor,
         border: `2px solid ${textColor}33`,
         cursor: disabled ? "not-allowed" : "pointer",
+        transition: "transform 0.2s, box-shadow 0.2s",
         boxShadow: disabled
           ? "none"
           : playable
-          ? `0 0 10px 3px ${bgColor}aa`
+          ? `0 0 12px 4px ${bgColor}aa` 
           : `0 4px 8px ${bgColor}55`,
+      }}
+      onMouseEnter={(e) => {
+        if (playable && !disabled) e.currentTarget.style.transform = "scale(1.1)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = "scale(1)";
       }}
     >
       {String(value).toUpperCase()}

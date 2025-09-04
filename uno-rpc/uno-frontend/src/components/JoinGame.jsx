@@ -9,19 +9,22 @@ const JoinGame = ({ onJoined }) => {
   const [message, setMessage] = useState("");
 
   const handleJoin = async () => {
-    if (!playerName) return alert("Enter your name");
+    const trimmedName = playerName.trim();
+    const trimmedGameId = gameId.trim();
+
+    if (!trimmedName) return setMessage("Please enter your name");
 
     setLoading(true);
     setMessage("");
+
     try {
-      const resp = await joinGame([playerName], gameId);
+      const resp = await joinGame([trimmedName], trimmedGameId || undefined);
       console.log("JoinGame response:", resp);
 
       const allPlayers = resp.allPlayers || [];
       const newPlayers = resp.newPlayers || [];
 
-      setMessage(resp.message);
-
+      // Notify parent component
       onJoined(
         {
           gameId: resp.gameId,
@@ -29,13 +32,16 @@ const JoinGame = ({ onJoined }) => {
           newPlayers,
           message: resp.message,
         },
-        playerName
+        trimmedName
       );
+
+      setMessage(resp.message);
     } catch (err) {
       console.error(err);
-      setMessage("Failed to join game. Please try again.");
+      setMessage(err?.message || "Failed to join game. Please try again.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
@@ -57,7 +63,6 @@ const JoinGame = ({ onJoined }) => {
         <button onClick={handleJoin} disabled={loading}>
           {loading ? "Joining..." : "Join Game"}
         </button>
-
         {message && <p className={styles.message}>{message}</p>}
       </div>
     </div>

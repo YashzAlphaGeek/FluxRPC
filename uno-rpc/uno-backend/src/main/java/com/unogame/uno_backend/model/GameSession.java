@@ -47,40 +47,62 @@ public class GameSession {
     public GameSession(String gameId) {
         this.gameId = gameId;
         initializeDeck();
-        initializeTableCard();
     }
 
+    // --- Deck management ---
     private void initializeDeck() {
         deck = generateDeck();
         Collections.shuffle(deck, new Random());
     }
 
-    private void initializeTableCard() {
-        if (!deck.isEmpty()) {
-            Card firstCard = deck.remove(0);
-            cardsOnTable.add(firstCard);
+    private List<Card> generateDeck() {
+        List<Card> deck = new ArrayList<>();
+        String[] colors = { "Red", "Blue", "Green", "Yellow" };
+        String[] values = { "0","1","2","3","4","5","6","7","8","9","Skip","Reverse","DrawTwo" };
+
+        for (String color : colors) {
+            for (String value : values) {
+                deck.add(new Card(color, value));
+                if (!value.equals("0")) deck.add(new Card(color, value));
+            }
         }
+
+        for (int i = 0; i < 4; i++) {
+            deck.add(new Card("Wild", "Wild"));
+            deck.add(new Card("Wild", "DrawFour"));
+        }
+
+        Collections.shuffle(deck, new Random());
+        return deck;
     }
 
-    public String getGameId() { return gameId; }
-
-    public synchronized List<Player> getPlayers() { return new ArrayList<>(players); }
-
-    public synchronized List<Card> getCardsOnTable() { return new ArrayList<>(cardsOnTable); }
-
-    public synchronized String getCurrentPlayerId() {
-        if (players.isEmpty()) return null;
-        return players.get(currentPlayerIndex).getPlayerId();
+    public synchronized void dealInitialHand(Player player) {
+        List<Card> hand = playerHands.getOrDefault(player.getPlayerId(), new ArrayList<>());
+        while (hand.size() < 7) {
+            if (deck.isEmpty()) reshuffleDeck();
+            if (!deck.isEmpty()) hand.add(deck.remove(0));
+        }
+        playerHands.put(player.getPlayerId(), hand);
     }
 
-    public synchronized List<Card> getPlayerHand(String playerId) {
-        return playerHands.getOrDefault(playerId, new ArrayList<>());
+    private void reshuffleDeck() {
+        if (cardsOnTable.size() <= 1) return; 
+        Card topCard = cardsOnTable.remove(cardsOnTable.size() - 1);
+        deck.addAll(cardsOnTable);
+        Collections.shuffle(deck, new Random());
+        cardsOnTable.clear();
+        cardsOnTable.add(topCard);
+    }
+
+    public synchronized void placeInitialTableCard() {
+        if (!deck.isEmpty() && cardsOnTable.isEmpty()) {
+            cardsOnTable.add(deck.remove(0));
+        }
     }
 
     public synchronized void addPlayer(Player player) {
         if (!hasPlayer(player.getPlayerId())) {
             players.add(player);
-            dealInitialHand(player);
         }
     }
 
@@ -92,57 +114,48 @@ public class GameSession {
         return players.size() >= maxPlayers;
     }
 
-    public synchronized int getPlayerCount() { return players.size(); }
+    public synchronized List<Player> getPlayers() {
+        return new ArrayList<>(players);
+    }
 
+    public synchronized List<Card> getPlayerHand(String playerId) {
+        return new ArrayList<>(playerHands.getOrDefault(playerId, new ArrayList<>()));
+    }
+
+    public synchronized List<Card> getCardsOnTable() {
+        return new ArrayList<>(cardsOnTable);
+    }
+
+    public synchronized String getCurrentPlayerId() {
+        if (players.isEmpty()) return null;
+        return players.get(currentPlayerIndex).getPlayerId();
+    }
+
+    // --- Gameplay logic ---
     public synchronized PlayResult playCard(String playerId, Card card) {
-        if (!hasPlayer(playerId)) return new PlayResult(null, PlayResult.Status.INVALID_PLAYER);
-        if (!playerId.equals(getCurrentPlayerId())) return new PlayResult(getCurrentPlayerId(), PlayResult.Status.INVALID_TURN);
+        if (!hasPlayer(playerId)) {
+            return new PlayResult(null, PlayResult.Status.INVALID_PLAYER);
+        }
+        if (!playerId.equals(getCurrentPlayerId())) {
+            return new PlayResult(getCurrentPlayerId(), PlayResult.Status.INVALID_TURN);
+        }
 
         List<Card> hand = playerHands.get(playerId);
-        if (hand == null || !hand.remove(card)) return new PlayResult(getCurrentPlayerId(), PlayResult.Status.INVALID_PLAYER);
+        if (hand == null || !hand.removeIf(c -> c.equals(card))) {
+            return new PlayResult(getCurrentPlayerId(), PlayResult.Status.INVALID_PLAYER);
+        }
 
         cardsOnTable.add(card);
-
         currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
-
         return new PlayResult(getCurrentPlayerId(), PlayResult.Status.OK);
     }
 
-    private void dealInitialHand(Player player) {
-        List<Card> hand = new ArrayList<>();
-        for (int i = 0; i < 7 && !deck.isEmpty(); i++) {
-            hand.add(deck.remove(0));
-        }
-        playerHands.put(player.getPlayerId(), hand);
-    }
-
-    private List<Card> generateDeck() {
-        List<Card> deck = new ArrayList<>();
-        String[] colors = { "Red", "Blue", "Green", "Yellow" };
-        String[] values = { "0","1","2","3","4","5","6","7","8","9","Skip","Reverse","DrawTwo" };
-
-        for (String color : colors) {
-            for (String value : values) {
-                deck.add(new Card(color, value));
-                if (!value.equals("0")) deck.add(new Card(color, value)); 
-            }
-        }
-
-        for (int i = 0; i < 4; i++) {
-            deck.add(new Card("Wild", "Wild"));
-            deck.add(new Card("Wild", "DrawFour"));
-        }
-
+    public synchronized List<Card> getDeck() {
         return deck;
     }
 
-    public void setPlayers(List<Player> players) { this.players = players; }
-    public void setCardsOnTable(List<Card> cardsOnTable) { this.cardsOnTable = cardsOnTable; }
-    public void setPlayerHands(Map<String, List<Card>> playerHands) { this.playerHands = playerHands; }
-
     public static class PlayResult {
         public enum Status { OK, INVALID_TURN, INVALID_PLAYER }
-
         private final String nextPlayerId;
         private final Status status;
 

@@ -10,45 +10,55 @@ const GameBoard = ({ gameId, playerId, playerName }) => {
   const [currentPlayer, setCurrentPlayer] = useState(null);
   const [cardsOnTable, setCardsOnTable] = useState([]);
   const [myCards, setMyCards] = useState([]);
+  const [lastMoveInfo, setLastMoveInfo] = useState("");
 
   useEffect(() => {
     if (!gameId) return;
 
     const stream = subscribeGameState(
       gameId,
-      (resp) => {
-        console.log("GameState response:", resp);
+      (data) => {
+        const normalizedPlayers = (data.players || []).map((p, i) => ({
+          id: p.id,
+          name: p.name,
+          cards: (p.cards || []).map((c, j) => ({
+            uid: c.uid || `p${i}_c${j}_${Date.now()}`,
+            color: c.color,
+            value: c.value,
+          })),
+        }));
 
-        setPlayers(resp.players || []);
-        setCardsOnTable(resp.cardsOnTable || []);
+        setPlayers(normalizedPlayers);
+        setCardsOnTable((data.cardsOnTable || []).map((c, i) => ({
+          uid: c.uid || `table_${i}_${Date.now()}`,
+          color: c.color,
+          value: c.value,
+        })));
 
-        const current = (resp.players || []).find(p => p.id === resp.currentPlayerId);
-        setCurrentPlayer(current || null);
+        const current = normalizedPlayers.find((p) => p.id === data.currentPlayerId) || null;
+        setCurrentPlayer(current);
 
-        const me = (resp.players || []).find(p => p.id === playerId);
+        const me = normalizedPlayers.find((p) => p.id === playerId);
         setMyCards(me?.cards || []);
+
+        setLastMoveInfo(data.lastMoveInfo || "");
       },
-      console.error,
-      () => console.log("GameState stream ended")
+      (err) => console.error("GameBoard stream error:", err),
+      () => console.log("GameBoard stream ended")
     );
 
-    return () => stream.cancel();
+    return () => stream?.cancel?.();
   }, [gameId, playerId]);
 
   const isMyTurn = currentPlayer?.id === playerId;
   const lastCard = cardsOnTable[cardsOnTable.length - 1];
 
-  const isCardPlayable = (card) => {
-    if (!lastCard) return true;
-    return (
-      card.color === lastCard.color ||
-      card.value === lastCard.value ||
-      card.color === "black"
-    );
-  };
+  const isCardPlayable = (card) =>
+    !lastCard || card.color === lastCard.color || card.value === lastCard.value || card.color === "black";
 
   const handlePlayCard = (card) => {
     if (!isMyTurn) return alert("Not your turn!");
+    if (!isCardPlayable(card)) return alert("Card not playable!");
     playCard(gameId, playerId, card).catch(console.error);
   };
 
@@ -62,6 +72,7 @@ const GameBoard = ({ gameId, playerId, playerName }) => {
           currentPlayer={currentPlayer || { id: playerId, name: playerName }}
           gameId={gameId}
         />
+        {lastMoveInfo && <p className={styles.lastMove}>Last move: {lastMoveInfo}</p>}
       </div>
 
       <div className={styles.mainArea}>
@@ -71,32 +82,20 @@ const GameBoard = ({ gameId, playerId, playerName }) => {
             return (
               <div
                 key={p.id}
-                className={`${styles.playerCircle} ${
-                  p.id === currentPlayer?.id ? styles.currentTurn : ""
-                }`}
-                data-color={p.color}
-                style={{
-                  transform: `rotate(${angle}deg) translate(${radius}px) rotate(-${angle}deg)`,
-                }}
+                className={`${styles.playerCircle} ${p.id === currentPlayer?.id ? styles.currentTurn : ""}`}
+                style={{ transform: `rotate(${angle}deg) translate(${radius}px) rotate(-${angle}deg)` }}
               >
-                <div>{p.name}</div>
-                <div>({p.cards?.length || 0})</div>
+                <div className={styles.playerName}>{p.name}</div>
+                <div className={styles.cardCount}>({p.cards?.length || 0})</div>
               </div>
             );
           })}
 
           <div className={styles.centerTable}>
             {cardsOnTable.length > 0 ? (
-              cardsOnTable.map((c) => (
-                <CardButton
-                  key={c.uid}
-                  card={c}
-                  disabled={!isMyTurn}
-                  playable={isMyTurn}
-                />
-              ))
+              cardsOnTable.map((c) => <CardButton key={c.uid} card={c} disabled playable={false} />)
             ) : (
-              <p className={styles.noCardsText}>(none yet)</p>
+              <p className={styles.noCardsText}>(no cards yet)</p>
             )}
           </div>
         </div>
@@ -115,7 +114,7 @@ const GameBoard = ({ gameId, playerId, playerName }) => {
                 />
               ))
             ) : (
-              <p className={styles.noCardsText}>(no cards yet)</p>
+              <p className={styles.noCardsText}>(waiting for cards...)</p>
             )}
           </div>
         </div>

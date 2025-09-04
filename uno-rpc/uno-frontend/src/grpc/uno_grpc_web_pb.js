@@ -137,6 +137,67 @@ proto.UnoServicePromiseClient.prototype.joinGame =
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
+ *   !proto.StartGameRequest,
+ *   !proto.StartGameResponse>}
+ */
+const methodDescriptor_UnoService_StartGame = new grpc.web.MethodDescriptor(
+  '/UnoService/StartGame',
+  grpc.web.MethodType.UNARY,
+  proto.StartGameRequest,
+  proto.StartGameResponse,
+  /**
+   * @param {!proto.StartGameRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.StartGameResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.StartGameRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.StartGameResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.StartGameResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.UnoServiceClient.prototype.startGame =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/UnoService/StartGame',
+      request,
+      metadata || {},
+      methodDescriptor_UnoService_StartGame,
+      callback);
+};
+
+
+/**
+ * @param {!proto.StartGameRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.StartGameResponse>}
+ *     Promise that resolves to the response
+ */
+proto.UnoServicePromiseClient.prototype.startGame =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/UnoService/StartGame',
+      request,
+      metadata || {},
+      methodDescriptor_UnoService_StartGame);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
  *   !proto.GameStateRequest,
  *   !proto.GameStateResponse>}
  */
