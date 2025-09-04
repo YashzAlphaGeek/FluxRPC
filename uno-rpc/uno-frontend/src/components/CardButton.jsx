@@ -2,14 +2,18 @@ import React from "react";
 import styles from "../styles/CardButton.module.css";
 
 const CardButton = ({ card, onClick, disabled, playable }) => {
-  const [color, value] = card.split("_"); 
+  if (!card) return null;
+
+  const { color, value } = card; 
 
   const colorMap = {
     red: "#e74c3c",
     green: "#27ae60",
     blue: "#3498db",
     yellow: "#f1c40f",
-    black: "#000",
+    black: "#000000",
+    purple: "#9b59b6",
+    orange: "#e67e22",
   };
 
   const bgColor = colorMap[color] || "#ccc";
@@ -32,7 +36,7 @@ const CardButton = ({ card, onClick, disabled, playable }) => {
           : `0 4px 8px ${bgColor}55`,
       }}
     >
-      {value.toUpperCase()}
+      {String(value).toUpperCase()}
     </button>
   );
 };

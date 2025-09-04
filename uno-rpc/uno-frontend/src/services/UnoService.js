@@ -1,7 +1,19 @@
 import { UnoServiceClient } from "../grpc/uno_grpc_web_pb";
-import { JoinRequest, PlayRequest, GameStateRequest } from "../grpc/uno_pb";
+import {
+  JoinRequest,
+  PlayRequest,
+  GameStateRequest,
+  Card as ProtoCard,
+} from "../grpc/uno_pb";
 
 const client = new UnoServiceClient("/");
+
+const normalizeCards = (cards = [], prefix = "card") =>
+  cards.map((c, i) => ({
+    uid: `${prefix}_${i}_${Date.now()}`,
+    color: c.getColor(),
+    value: c.getValue(),
+  }));
 
 // Join a game
 export const joinGame = (playerNames, gameId) => {
@@ -13,14 +25,16 @@ export const joinGame = (playerNames, gameId) => {
     client.joinGame(req, {}, (err, resp) => {
       if (err) return reject(err);
 
-      const allPlayers = resp.getAllplayeridsList().map(p => ({
+      const allPlayers = resp.getAllplayeridsList().map((p, i) => ({
         id: p.getId(),
         name: p.getName(),
+        cards: normalizeCards(p.getHandList(), `all_${i}`),
       }));
 
-      const newPlayers = resp.getNewplayeridsList().map(p => ({
+      const newPlayers = resp.getNewplayeridsList().map((p, i) => ({
         id: p.getId(),
         name: p.getName(),
+        cards: normalizeCards(p.getHandList(), `new_${i}`),
       }));
 
       resolve({
@@ -38,43 +52,43 @@ export const playCard = (gameId, playerId, card) => {
   const req = new PlayRequest();
   req.setGameid(gameId);
   req.setPlayerid(playerId);
-  req.setCard(card);
+
+  const protoCard = new ProtoCard();
+  protoCard.setColor(card.color);
+  protoCard.setValue(card.value);
+  req.setCard(protoCard);
 
   return new Promise((resolve, reject) => {
-    client.play(req, {}, (err, resp) => {
+    client.playCard(req, {}, (err, resp) => {
       if (err) return reject(err);
       resolve(resp.toObject());
     });
   });
 };
 
+// Subscribe to game state
 export const subscribeGameState = (gameId, onData, onError, onEnd) => {
   const req = new GameStateRequest();
   req.setGameid(gameId);
 
   const stream = client.gameState(req, {});
-  stream.on("data", resp => {
-    const state = resp.toObject ? resp.toObject() : resp;
-
-    const protoPlayers = resp.getPlayersList ? resp.getPlayersList() : state.players || [];
+  stream.on("data", (resp) => {
+    const protoPlayers = resp.getPlayersList?.() || [];
     const players = protoPlayers.map((p, i) => ({
-      id: p.getId ? p.getId() : `player-${i}`,
-      name: p.getName ? p.getName() : `Player ${i + 1}`,
-      cards: [], 
+      id: p.getId(),
+      name: p.getName(),
+      cards: normalizeCards(p.getHandList(), `p${i}`),
     }));
 
-    const protoCards = resp.getCardsOnTableList ? resp.getCardsOnTableList() : state.cardsOnTable || [];
-    const cardsOnTable = protoCards.map((c, i) => {
-      const [color, value] = (c || "").split("_");
-      return { uid: `card_${i}`, color: color || "black", value: value || "" };
-    });
+    const protoCards = resp.getCardsOnTableList?.() || [];
+    const cardsOnTable = normalizeCards(protoCards, "table");
 
-    const currentPlayerId = resp.getCurrentPlayerId ? resp.getCurrentPlayerId() : state.currentPlayerId || null;
+    const currentPlayerId = resp.getCurrentPlayerId?.() || null;
 
     onData({ players, cardsOnTable, currentPlayerId });
   });
 
-  stream.on("error", err => onError?.(err));
+  stream.on("error", (err) => onError?.(err));
   stream.on("end", () => onEnd?.());
 
   return stream;

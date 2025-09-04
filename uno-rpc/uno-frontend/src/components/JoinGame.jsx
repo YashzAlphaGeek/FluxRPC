@@ -17,19 +17,8 @@ const JoinGame = ({ onJoined }) => {
       const resp = await joinGame([playerName], gameId);
       console.log("JoinGame response:", resp);
 
-      const allPlayers = resp.allPlayers?.map((p, i) => ({
-        id: p.id,
-        name: p.name || `Player ${i + 1}`,
-        cards: [],
-        color: null, 
-      })) || [];
-
-      const newPlayers = resp.newPlayers?.map((p, i) => ({
-        id: p.id,
-        name: p.name || `Player ${i + 1}`,
-        cards: [],
-        color: null,
-      })) || [];
+      const allPlayers = resp.allPlayers || [];
+      const newPlayers = resp.newPlayers || [];
 
       setMessage(resp.message);
 

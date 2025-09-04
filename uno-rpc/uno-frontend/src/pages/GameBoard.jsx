@@ -3,9 +3,7 @@ import { subscribeGameState, playCard } from "../services/UnoService";
 import CardButton from "../components/CardButton";
 import GameHeader from "../components/GameHeader";
 import styles from "../styles/GameBoard.module.css";
-import '../styles/common.css';
-
-const COLORS = ["red", "green", "yellow", "blue", "purple", "orange"];
+import "../styles/common.css";
 
 const GameBoard = ({ gameId, playerId, playerName }) => {
   const [players, setPlayers] = useState([]);
@@ -21,19 +19,13 @@ const GameBoard = ({ gameId, playerId, playerName }) => {
       (resp) => {
         console.log("GameState response:", resp);
 
-        const normalizedPlayers = (resp.players || []).map((p, i) => ({
-          ...p,
-          color: COLORS[i % COLORS.length],
-        }));
-
-        setPlayers(normalizedPlayers);
-
-        const current = normalizedPlayers.find(p => p.id === resp.currentPlayerId);
-        setCurrentPlayer(current || null);
-
+        setPlayers(resp.players || []);
         setCardsOnTable(resp.cardsOnTable || []);
 
-        const me = normalizedPlayers.find(p => p.id === playerId);
+        const current = (resp.players || []).find(p => p.id === resp.currentPlayerId);
+        setCurrentPlayer(current || null);
+
+        const me = (resp.players || []).find(p => p.id === playerId);
         setMyCards(me?.cards || []);
       },
       console.error,
@@ -48,12 +40,16 @@ const GameBoard = ({ gameId, playerId, playerName }) => {
 
   const isCardPlayable = (card) => {
     if (!lastCard) return true;
-    return card.color === lastCard.color || card.value === lastCard.value || card.color === "black";
+    return (
+      card.color === lastCard.color ||
+      card.value === lastCard.value ||
+      card.color === "black"
+    );
   };
 
   const handlePlayCard = (card) => {
     if (!isMyTurn) return alert("Not your turn!");
-    playCard(gameId, playerId, `${card.color}_${card.value}`).catch(console.error);
+    playCard(gameId, playerId, card).catch(console.error);
   };
 
   const radius = Math.min(200, 250 - players.length * 10);
@@ -64,7 +60,7 @@ const GameBoard = ({ gameId, playerId, playerName }) => {
         <GameHeader
           players={players}
           currentPlayer={currentPlayer || { id: playerId, name: playerName }}
-           gameId={gameId}
+          gameId={gameId}
         />
       </div>
 
@@ -75,9 +71,13 @@ const GameBoard = ({ gameId, playerId, playerName }) => {
             return (
               <div
                 key={p.id}
-                className={`${styles.playerCircle} ${p.id === currentPlayer?.id ? styles.currentTurn : ""}`}
+                className={`${styles.playerCircle} ${
+                  p.id === currentPlayer?.id ? styles.currentTurn : ""
+                }`}
                 data-color={p.color}
-                style={{ transform: `rotate(${angle}deg) translate(${radius}px) rotate(-${angle}deg)` }}
+                style={{
+                  transform: `rotate(${angle}deg) translate(${radius}px) rotate(-${angle}deg)`,
+                }}
               >
                 <div>{p.name}</div>
                 <div>({p.cards?.length || 0})</div>
@@ -86,29 +86,37 @@ const GameBoard = ({ gameId, playerId, playerName }) => {
           })}
 
           <div className={styles.centerTable}>
-            {cardsOnTable.length > 0 ? cardsOnTable.map(c => (
-              <CardButton
-                key={c.uid}
-                card={`${c.color}_${c.value}`}
-                disabled={!isMyTurn}
-                playable={isMyTurn}
-              />
-            )) : <p className={styles.noCardsText}>(none yet)</p>}
+            {cardsOnTable.length > 0 ? (
+              cardsOnTable.map((c) => (
+                <CardButton
+                  key={c.uid}
+                  card={c}
+                  disabled={!isMyTurn}
+                  playable={isMyTurn}
+                />
+              ))
+            ) : (
+              <p className={styles.noCardsText}>(none yet)</p>
+            )}
           </div>
         </div>
 
         <div className={styles.handSection}>
           <h3>Your Hand:</h3>
           <div className={styles.handCardsRow}>
-            {myCards.length > 0 ? myCards.map((c, i) => (
-              <CardButton
-                key={`hand_${i}`}
-                card={`${c.color}_${c.value}`}
-                onClick={() => handlePlayCard(c)}
-                disabled={!isMyTurn}
-                playable={isMyTurn && isCardPlayable(c)}
-              />
-            )) : <p className={styles.noCardsText}>(no cards yet)</p>}
+            {myCards.length > 0 ? (
+              myCards.map((c) => (
+                <CardButton
+                  key={c.uid}
+                  card={c}
+                  onClick={() => handlePlayCard(c)}
+                  disabled={!isMyTurn}
+                  playable={isMyTurn && isCardPlayable(c)}
+                />
+              ))
+            ) : (
+              <p className={styles.noCardsText}>(no cards yet)</p>
+            )}
           </div>
         </div>
       </div>
