@@ -40,13 +40,45 @@ flowchart TD
 
 # UNO-RPC: Multiplayer Turn-Based Game with gRPC
 
-The flow of **gRPC** calls in UNO-RPC—Unary (Join Game), Server Streaming (Game State), and BiDi Streaming (Play Card)—through server interceptors in the **Spring Boot** backend services to the clients..
+The flow of **gRPC** calls in UNO-RPC—Unary (Join Game), Server Streaming (Game State), and BiDi Streaming (Play Card)—through server interceptors in the **Spring Boot** backend services to the clients.
 
-<img width="473" height="234" alt="image" src="https://github.com/user-attachments/assets/f31195f4-5df5-44a1-89e9-98593c814953" />
+```mermaid
+%% UNO-RPC gRPC Call Flow
+
+flowchart TD
+    subgraph Client
+        C1[Join Game Request]
+        C2[Play Card Stream]
+        C3[Request Game State]
+        C4[Start Game Request]
+    end
+
+    subgraph Server
+        S1[UnoServiceImpl]
+        S1Join[Join Response]
+        S1Start[Start Game Response]
+        S1Play[Play Response Stream]
+        S1State[Game State Stream]
+    end
+
+    %% Join Game (Unary)
+    C1 --> S1 --> S1Join --> C1
+
+    %% Start Game (Unary)
+    C4 --> S1 --> S1Start --> C4
+    S1 --> S1State --> C3
+
+    %% Play Card (BiDi Streaming)
+    C2 --> S1 --> S1Play --> C2
+
+    %% Game State (Server Streaming)
+    C3 --> S1 --> S1State --> C3
+```
 
 # UNO-RPC: UNO Game gRPC Flow: Join, Play, and Real-Time Updates
 
-<img src="https://github.com/user-attachments/assets/34cedb87-d673-48ad-b866-8a2a5bfd760b" width="600" alt="UNO Game Sequence">
+![uno-gRPC](https://github.com/user-attachments/assets/f0b36ae5-e230-4246-887f-9f9d4692da12)
+
 
 # UNO Game Flow: Browser → Envoy → Backend
 
@@ -66,9 +98,19 @@ sequenceDiagram
     Note right of Envoy: Translate to native gRPC
     Envoy->>Backend: Forward gRPC request
     Note right of Backend: Process join game logic
-    Backend-->>Envoy: Response (success, initial cards)
+    Backend-->>Envoy: Response (success, lobby state)
     Envoy-->>Frontend: Translate back to gRPC-Web
-    Frontend-->>Player: Update UI (show hand)
+    Frontend-->>Player: Update UI (show lobby, hands empty)
+
+    %% Step 1.5: Start game
+    Player->>Frontend: Clicks "Start Game"
+    Note right of Frontend: Prepare gRPC-Web request
+    Frontend->>Envoy: Sends StartGame request
+    Envoy->>Backend: Forward StartGame request
+    Note right of Backend: Deal initial hands, update game state
+    Backend-->>Envoy: Response (success, full game state with hands)
+    Envoy-->>Frontend: Translate back to gRPC-Web
+    Frontend-->>Player: Update UI (show full hands, current player)
 
     %% Step 2: Player plays a card
     Player->>Frontend: Plays a card
@@ -84,31 +126,4 @@ sequenceDiagram
     %% Notes for context
     Note over Backend: Central game logic & state management
     Note over Envoy: Acts as bridge between Browser and Backend
-```
-
-```mermaid
-%% UNO-RPC gRPC Call Flow
-
-flowchart TD
-    subgraph Client
-        C1[Join Game Request]
-        C2[Play Card Stream]
-        C3[Request Game State]
-    end
-
-    subgraph Server
-        S1[UnoServiceImpl]
-        S1Join[Join Response]
-        S1Play[Play Response Stream]
-        S1State[Game State Stream]
-    end
-
-    %% Join Game (Unary)
-    C1 --> S1 --> S1Join --> C1
-
-    %% Play Card (BiDi Streaming)
-    C2 --> S1 --> S1Play --> C2
-
-    %% Game State (Server Streaming)
-    C3 --> S1 --> S1State --> C3
 ```
