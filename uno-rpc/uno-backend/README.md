@@ -28,6 +28,7 @@ UNO-RPC with **gRPC** for high-performance, bi-directional communication between
 ```proto
 service UnoService {
     rpc JoinGame (JoinRequest) returns (JoinResponse);
+    rpc StartGame (StartGameRequest) returns (StartGameResponse);
     rpc PlayCard (stream PlayRequest) returns (stream PlayResponse);
     rpc GameState (GameStateRequest) returns (stream GameStateResponse);
 }
@@ -41,6 +42,7 @@ service UnoService {
 classDiagram
     class UnoServiceImpl {
         +joinGame(JoinRequest) : JoinResponse
+        +startGame(StartGameRequest) : StartGameResponse
         +playCard(StreamObserver<PlayResponse>) : StreamObserver<PlayRequest>
         +gameState(GameStateRequest) : void
     }
@@ -48,6 +50,7 @@ classDiagram
     class GameService {
         +createGame(Player) : String
         +joinExistingGame(String, Player) : JoinResult
+        +startGame(String) : void
         +playCard(String, String, String) : PlayResult
         +getPlayersInGame(String) : List~String~
         +getCardsOnTable(String) : List~String~
@@ -66,6 +69,8 @@ classDiagram
         -int currentPlayerIndex
         +addPlayer(String)
         +hasPlayer(String) : boolean
+        +dealInitialHands() : void
+        +startGame() : void
         +playCard(String, String) : PlayResult
         +getCurrentPlayerId() : String
     }
@@ -83,6 +88,7 @@ classDiagram
 flowchart TD
     subgraph Client
         C1[Join Game Request]
+        CStart[Start Game Request]
         C2[Play Card Stream]
         C3[Request Game State]
     end
@@ -90,6 +96,7 @@ flowchart TD
     subgraph Server
         S1[UnoServiceImpl]
         S1Join[Join Response]
+        S1Start[Start Game Response]
         S1Play[Play Response Stream]
         S1State[Game State Stream]
     end
@@ -97,11 +104,14 @@ flowchart TD
     %% Join Game (Unary)
     C1 --> S1 --> S1Join --> C1
 
-    %% Play Card (BiDi Streaming)
-    C2 --> S1 --> S1Play --> C2
+    %% Start Game (Unary)
+    CStart --> S1 --> S1Start --> CStart
 
     %% Game State (Server Streaming)
     C3 --> S1 --> S1State --> C3
+
+    %% Play Card (BiDi Streaming)
+    C2 --> S1 --> S1Play --> C2
 
     %% Broadcast Game State after each play
     S1Play --> S1State
@@ -132,7 +142,14 @@ sequenceDiagram
         Server-->>Player: JoinResponse(newPlayerIds=[Pn], allPlayerIds=[P1..Pn])
     end
 
-    %% Game state
+    %% Start game (deal hands, table card, current player)
+    Player->>Server: startGame(gameId)
+    Server->>DB: dealInitialHands + setTopCard
+    DB-->>Server: updated GameSession (hands, table, currentPlayer)
+    Server-->>Player: StartGameResponse
+    Server-->>Player: GameStateResponse(full state with hands)
+
+    %% Game state subscription
     loop Subscribe
         Player->>Server: gameState
         Server-->>Player: GameStateResponse
@@ -143,7 +160,8 @@ sequenceDiagram
         Player->>Server: playCard(card)
         Server->>DB: update GameSession
         DB-->>Server: updated GameSession
-        Server-->>Player: PlayResponse + GameStateResponse
+        Server-->>Player: PlayResponse
+        Server-->>Player: GameStateResponse(updated state)
     end
 ```
 ---
@@ -165,28 +183,51 @@ sequenceDiagram
 {
     "allPlayerIds": [
         {
-            "id": "cd991e6b-3090-4ed6-93e7-3ef3e0d13fdd",
+            "hand": [],
+            "id": "a891be20-f13b-447d-9588-a1288e48ba52",
             "name": "Yash"
         },
         {
-            "id": "3a258481-2383-4840-b52d-aa0ab21920b1",
+            "hand": [],
+            "id": "5e674cc6-1544-4379-9d6c-6f574cb60778",
             "name": "Chuckaboo"
         }
     ],
     "newPlayerIds": [
         {
-            "id": "3a258481-2383-4840-b52d-aa0ab21920b1",
+            "hand": [],
+            "id": "5e674cc6-1544-4379-9d6c-6f574cb60778",
             "name": "Chuckaboo"
         }
     ],
     "message": "Game created and players joined",
-    "gameId": "fe130b1e-2c5e-43eb-a80c-e02756524010"
+    "gameId": "FRJNV"
 }
 ```
 
 ---
 
-## 2️⃣ Play Card
+## 2️⃣ Start Game
+
+**Request**
+
+```json
+{
+  "gameId": "FRJNV"
+}
+```
+
+**Response**
+
+```json
+{
+    "message": "Game started and hands dealt"
+}
+```
+
+---
+
+## 3️⃣ Play Card
 
 ### First Player Plays
 
@@ -242,7 +283,7 @@ sequenceDiagram
 
 ```json
 {
-  "gameId": "0606ea54-415c-44b4-84d4-3cd5ebee62ca"
+  "gameId": "FRJNV"
 }
 ```
 
@@ -252,17 +293,77 @@ sequenceDiagram
 {
     "players": [
         {
-            "id": "04e0b608-32b5-4b4f-bdd0-a270921a3375",
+            "hand": [
+                {
+                    "color": "Red",
+                    "value": "0"
+                },
+                {
+                    "color": "Green",
+                    "value": "4"
+                },
+                {
+                    "color": "Red",
+                    "value": "9"
+                },
+                {
+                    "color": "Red",
+                    "value": "6"
+                },
+                {
+                    "color": "Blue",
+                    "value": "2"
+                },
+                {
+                    "color": "Green",
+                    "value": "9"
+                },
+                {
+                    "color": "Yellow",
+                    "value": "4"
+                }
+            ],
+            "id": "a891be20-f13b-447d-9588-a1288e48ba52",
             "name": "Yash"
         },
         {
-            "id": "dfcd0891-a736-490f-8e66-dc13533dd30d",
+            "hand": [
+                {
+                    "color": "Green",
+                    "value": "1"
+                },
+                {
+                    "color": "Green",
+                    "value": "Skip"
+                },
+                {
+                    "color": "Blue",
+                    "value": "7"
+                },
+                {
+                    "color": "Green",
+                    "value": "5"
+                },
+                {
+                    "color": "Wild",
+                    "value": "DrawFour"
+                },
+                {
+                    "color": "Blue",
+                    "value": "6"
+                },
+                {
+                    "color": "Yellow",
+                    "value": "1"
+                }
+            ],
+            "id": "5e674cc6-1544-4379-9d6c-6f574cb60778",
             "name": "Chuckaboo"
         }
     ],
     "cardsOnTable": [],
-    "gameId": "0606ea54-415c-44b4-84d4-3cd5ebee62ca",
-    "currentPlayerId": "04e0b608-32b5-4b4f-bdd0-a270921a3375",
+    "gameId": "FRJNV",
+    "currentPlayerId": "a891be20-f13b-447d-9588-a1288e48ba52",
     "lastMoveStatus": "OK",
     "lastMoveInfo": ""
 }
