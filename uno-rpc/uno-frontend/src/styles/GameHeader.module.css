@@ -1,3 +1,19 @@
+/* Reset and Full Height */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #12121f; 
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.main-container {
+  display: flex;
+  min-height: 100vh;
+  gap: 20px; 
+}
+
+/* Sidebar Container */
 .sidebar {
   width: 220px;
   background: #1e1e2f;
@@ -7,11 +23,14 @@
   display: flex;
   flex-direction: column;
   gap: 15px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   flex-shrink: 0;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  min-height: 100vh; /* Fill viewport height */
+  box-sizing: border-box; /* padding included in height */
+  transition: all 0.3s ease;
 }
 
+/* Sidebar Heading */
 h3 {
   margin: 0 0 10px 0;
   font-size: 18px;
@@ -20,6 +39,8 @@ h3 {
   letter-spacing: 0.5px;
   font-weight: 600;
   user-select: none;
+  text-transform: uppercase;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .gameIdContainer {
@@ -33,6 +54,7 @@ h3 {
 .gameId {
   font-weight: 500;
   color: #f5a623;
+  font-size: 0.95rem;
 }
 
 .copyButton {
@@ -40,14 +62,13 @@ h3 {
   background: transparent;
   cursor: pointer;
   font-size: 0.9rem;
-  transition: transform 0.2s;
+  transition: transform 0.2s, color 0.2s;
 }
 
 .copyButton:hover {
   transform: scale(1.2);
+  color: #ffd56b;
 }
-
-
 
 .playerList {
   list-style: none;
@@ -63,13 +84,13 @@ h3 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
+  padding: 10px 14px;
   border-radius: 12px;
   cursor: default;
   overflow: hidden;
-  transition: all 0.3s ease;
-  background: transparent; 
-  user-select: none;      
+  transition: all 0.3s ease, box-shadow 0.3s ease;
+  background: rgba(255, 255, 255, 0.05);
+  user-select: none;
 }
 
 .playerItem::before {
@@ -79,15 +100,21 @@ h3 {
   top: 0;
   bottom: 0;
   width: 6px;
-  background-color: var(--player-color, #4a90e2); 
+  background-color: var(--player-color, #4a90e2);
   border-top-left-radius: 12px;
   border-bottom-left-radius: 12px;
   transition: background-color 0.3s ease;
 }
 
 .playerItem.currentTurn {
-  box-shadow: 0 0 12px #f5a623, 0 4px 8px rgba(0,0,0,0.2);
+  box-shadow: 0 0 12px #f5a623, 0 4px 8px rgba(0, 0, 0, 0.2);
   transform: scale(1.05);
+  background: rgba(245, 166, 35, 0.1);
+}
+
+.playerItem:not(.currentTurn):hover {
+  transform: scale(1.02);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .playerName {
@@ -112,16 +139,18 @@ h3 {
   padding: 12px;
   background: #2b2b3e;
   border-radius: 12px;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
   color: #f5a623;
   font-weight: 500;
   user-select: none;
+  transition: background 0.3s;
 }
 
-.playerItem:not(.currentTurn):hover {
-  transform: scale(1.02);
+.turnInfo:hover {
+  background: #32324a;
 }
 
+/* Responsive */
 @media (max-width: 768px) {
   .sidebar {
     width: 90%;
