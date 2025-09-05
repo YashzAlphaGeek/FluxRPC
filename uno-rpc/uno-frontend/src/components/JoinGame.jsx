@@ -24,7 +24,6 @@ const JoinGame = ({ onJoined }) => {
       const allPlayers = resp.allPlayers || [];
       const newPlayers = resp.newPlayers || [];
 
-      // Notify parent component
       onJoined(
         {
           gameId: resp.gameId,

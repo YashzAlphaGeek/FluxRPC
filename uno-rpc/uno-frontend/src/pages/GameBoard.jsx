@@ -18,6 +18,8 @@ const GameBoard = ({ gameId, playerId, playerName }) => {
     const stream = subscribeGameState(
       gameId,
       (data) => {
+        console.log("Game state response:", data);
+
         const normalizedPlayers = (data.players || []).map((p, i) => ({
           id: p.id,
           name: p.name,

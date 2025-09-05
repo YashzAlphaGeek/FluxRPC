@@ -38,7 +38,6 @@ export const joinGame = (playerNames, gameId) => {
     client.joinGame(req, {}, (err, resp) => {
       if (err) return reject(err);
 
-      // Use lowercase getters from generated code
       const allPlayersList = resp.getAllplayeridsList
         ? resp.getAllplayeridsList()
         : resp.allPlayerIds || [];
@@ -95,7 +94,6 @@ export const playCard = (gameId, playerId, card) => {
 };
 
 // --- Subscribe to game state ---
-// --- Subscribe to game state ---
 export const subscribeGameState = (gameId, onData, onError, onEnd) => {
   const req = new GameStateRequest();
   req.setGameid(gameId);
@@ -103,7 +101,7 @@ export const subscribeGameState = (gameId, onData, onError, onEnd) => {
   const stream = client.gameState(req, {});
 
   stream.on("data", (resp) => {
-    // Normalize players
+ 
     const protoPlayers = resp.getPlayersList?.() || resp.players || [];
     const players = protoPlayers.map((p, i) => {
       const handList = p.getHandList?.() || p.hand || [];
@@ -120,8 +118,7 @@ export const subscribeGameState = (gameId, onData, onError, onEnd) => {
       };
     });
 
-    // Normalize cards on table
-    const protoCards = resp.getCardsOnTableList?.() || resp.cardsOnTable || [];
+    const protoCards = resp.getCardsontableList?.() || resp.cardsOnTable || [];
     const cardsOnTable = protoCards.map((c, i) => ({
       uid: `table_${i}_${Date.now()}`,
       color: c.getColor?.() || c.color || "black",
