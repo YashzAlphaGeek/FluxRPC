@@ -24,11 +24,7 @@ public class GameSession {
     private String gameId;
 
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-        name = "game_session_players",
-        joinColumns = @JoinColumn(name = "game_id", referencedColumnName = "gameId"),
-        inverseJoinColumns = @JoinColumn(name = "player_id", referencedColumnName = "playerId")
-    )
+    @JoinTable(name = "game_session_players", joinColumns = @JoinColumn(name = "game_id", referencedColumnName = "gameId"), inverseJoinColumns = @JoinColumn(name = "player_id", referencedColumnName = "playerId"))
     private List<Player> players = new ArrayList<>();
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
@@ -42,7 +38,8 @@ public class GameSession {
 
     private int currentPlayerIndex = 0;
 
-    protected GameSession() {}
+    protected GameSession() {
+    }
 
     public GameSession(String gameId) {
         this.gameId = gameId;
@@ -58,12 +55,13 @@ public class GameSession {
     private List<Card> generateDeck() {
         List<Card> deck = new ArrayList<>();
         String[] colors = { "Red", "Blue", "Green", "Yellow" };
-        String[] values = { "0","1","2","3","4","5","6","7","8","9","Skip","Reverse","DrawTwo" };
+        String[] values = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "Skip", "Reverse", "DrawTwo" };
 
         for (String color : colors) {
             for (String value : values) {
                 deck.add(new Card(color, value));
-                if (!value.equals("0")) deck.add(new Card(color, value));
+                if (!value.equals("0"))
+                    deck.add(new Card(color, value));
             }
         }
 
@@ -79,14 +77,41 @@ public class GameSession {
     public synchronized void dealInitialHand(Player player) {
         List<Card> hand = playerHands.getOrDefault(player.getPlayerId(), new ArrayList<>());
         while (hand.size() < 7) {
-            if (deck.isEmpty()) reshuffleDeck();
-            if (!deck.isEmpty()) hand.add(deck.remove(0));
+            if (deck.isEmpty())
+                reshuffleDeck();
+            if (!deck.isEmpty())
+                hand.add(deck.remove(0));
         }
         playerHands.put(player.getPlayerId(), hand);
     }
 
+    public synchronized void placeInitialCardOnTable() {
+        if (cardsOnTable.isEmpty() && !deck.isEmpty()) {
+            Card initial = null;
+            while (!deck.isEmpty()) {
+                Card top = deck.remove(0);
+                if (!"Wild".equalsIgnoreCase(top.getColor())) {
+                    initial = top;
+                    break;
+                } else {
+                    deck.add(top); // put wilds back
+                }
+            }
+            if (initial != null) {
+                cardsOnTable.add(initial);
+            }
+        }
+    }
+
+    public synchronized void setCurrentPlayerIndex(int index) {
+        if (index >= 0 && index < players.size()) {
+            this.currentPlayerIndex = index;
+        }
+    }
+
     private void reshuffleDeck() {
-        if (cardsOnTable.size() <= 1) return; 
+        if (cardsOnTable.size() <= 1)
+            return;
         Card topCard = cardsOnTable.remove(cardsOnTable.size() - 1);
         deck.addAll(cardsOnTable);
         Collections.shuffle(deck, new Random());
@@ -127,7 +152,8 @@ public class GameSession {
     }
 
     public synchronized String getCurrentPlayerId() {
-        if (players.isEmpty()) return null;
+        if (players.isEmpty())
+            return null;
         return players.get(currentPlayerIndex).getPlayerId();
     }
 
@@ -146,7 +172,10 @@ public class GameSession {
         }
 
         cardsOnTable.add(card);
+
+        // Advance turn to next player
         currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
+
         return new PlayResult(getCurrentPlayerId(), PlayResult.Status.OK);
     }
 
@@ -155,7 +184,10 @@ public class GameSession {
     }
 
     public static class PlayResult {
-        public enum Status { OK, INVALID_TURN, INVALID_PLAYER }
+        public enum Status {
+            OK, INVALID_TURN, INVALID_PLAYER
+        }
+
         private final String nextPlayerId;
         private final Status status;
 
@@ -164,7 +196,12 @@ public class GameSession {
             this.status = status;
         }
 
-        public String getNextPlayerId() { return nextPlayerId; }
-        public Status getStatus() { return status; }
+        public String getNextPlayerId() {
+            return nextPlayerId;
+        }
+
+        public Status getStatus() {
+            return status;
+        }
     }
 }

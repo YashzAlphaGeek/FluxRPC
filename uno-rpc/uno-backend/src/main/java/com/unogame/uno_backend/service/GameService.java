@@ -60,9 +60,8 @@ public class GameService {
     @Transactional
     public JoinResponse joinPlayers(String gameId, List<Player> players) {
         GameSession game = activeGames.computeIfAbsent(gameId,
-            id -> gameSessionRepository.findById(id)
-                   .orElseThrow(() -> new IllegalArgumentException("Game not found: " + gameId))
-        );
+                id -> gameSessionRepository.findById(id)
+                        .orElseThrow(() -> new IllegalArgumentException("Game not found: " + gameId)));
 
         List<PlayerInfo> newPlayers = new ArrayList<>();
         for (Player player : players) {
@@ -85,19 +84,19 @@ public class GameService {
     @Transactional
     public void startGame(String gameId) {
         GameSession game = activeGames.computeIfAbsent(gameId,
-            id -> gameSessionRepository.findById(id)
-                   .orElseThrow(() -> new IllegalArgumentException("Game not found: " + gameId))
-        );
+                id -> gameSessionRepository.findById(id)
+                        .orElseThrow(() -> new IllegalArgumentException("Game not found: " + gameId)));
 
         // Deal 7 cards to each player
         for (Player player : game.getPlayers()) {
             game.dealInitialHand(player);
         }
 
-        // At least one card on the table
-        if (game.getCardsOnTable().isEmpty() && !game.getDeck().isEmpty()) {
-            game.getCardsOnTable().add(game.getDeck().remove(0));
-        }
+        // Place a valid initial card on table
+        game.placeInitialCardOnTable();
+
+        // Set first player
+        game.setCurrentPlayerIndex(0);
 
         activeGames.put(gameId, game);
         gameSessionRepository.save(game);
@@ -133,7 +132,8 @@ public class GameService {
     @Transactional(readOnly = true)
     public List<Card> getCardsOnTable(String gameId) {
         GameSession game = activeGames.get(gameId);
-        if (game != null) return game.getCardsOnTable();
+        if (game != null)
+            return game.getCardsOnTable();
         return gameSessionRepository.findById(gameId)
                 .map(GameSession::getCardsOnTable)
                 .orElse(new ArrayList<>());
@@ -142,7 +142,8 @@ public class GameService {
     @Transactional(readOnly = true)
     public String getCurrentPlayerId(String gameId) {
         GameSession game = activeGames.get(gameId);
-        if (game != null) return game.getCurrentPlayerId();
+        if (game != null)
+            return game.getCurrentPlayerId();
         return gameSessionRepository.findById(gameId)
                 .map(GameSession::getCurrentPlayerId)
                 .orElse(null);
@@ -151,9 +152,8 @@ public class GameService {
     @Transactional
     public GameSession.PlayResult playCard(String gameId, String playerId, Card card) {
         GameSession game = activeGames.computeIfAbsent(gameId,
-            id -> gameSessionRepository.findById(id)
-                   .orElseThrow(() -> new IllegalArgumentException("Game not found: " + gameId))
-        );
+                id -> gameSessionRepository.findById(id)
+                        .orElseThrow(() -> new IllegalArgumentException("Game not found: " + gameId)));
 
         GameSession.PlayResult result = game.playCard(playerId, card);
         gameSessionRepository.save(game);
@@ -161,7 +161,10 @@ public class GameService {
     }
 
     // --- DTOs ---
-    public record PlayerInfo(String id, String name) { }
-    public record JoinResponse(List<PlayerInfo> allPlayers, List<PlayerInfo> newPlayers) { }
+    public record PlayerInfo(String id, String name) {
+    }
+
+    public record JoinResponse(List<PlayerInfo> allPlayers, List<PlayerInfo> newPlayers) {
+    }
 
 }
