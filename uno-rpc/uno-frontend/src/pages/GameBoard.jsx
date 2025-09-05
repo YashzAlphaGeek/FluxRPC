@@ -81,11 +81,15 @@ const GameBoard = ({ gameId, playerId, playerName }) => {
         <div className={styles.roundTable}>
           {players.map((p, index) => {
             const angle = (360 / players.length) * index;
+            const isCurrent = p.id === currentPlayer?.id;
+            const isMe = p.id === playerId;
+
             return (
               <div
                 key={p.id}
-                className={`${styles.playerCircle} ${p.id === currentPlayer?.id ? styles.currentTurn : ""}`}
+                className={`${styles.playerCircle} ${isCurrent ? styles.currentTurn : ""} ${isMe ? styles.selfPlayer : ""}`}
                 style={{ transform: `rotate(${angle}deg) translate(${radius}px) rotate(-${angle}deg)` }}
+                data-color={p.cards?.[0]?.color || "gray"}
               >
                 <div className={styles.playerName}>{p.name}</div>
                 <div className={styles.cardCount}>({p.cards?.length || 0})</div>
@@ -95,7 +99,15 @@ const GameBoard = ({ gameId, playerId, playerName }) => {
 
           <div className={styles.centerTable}>
             {cardsOnTable.length > 0 ? (
-              cardsOnTable.map((c) => <CardButton key={c.uid} card={c} disabled playable={false} />)
+              cardsOnTable.map((c) => (
+                <CardButton
+                  key={c.uid}
+                  card={c}
+                  disabled
+                  playable={false}
+                  className={styles.animateCard}
+                />
+              ))
             ) : (
               <p className={styles.noCardsText}>(no cards yet)</p>
             )}
@@ -113,6 +125,7 @@ const GameBoard = ({ gameId, playerId, playerName }) => {
                   onClick={() => handlePlayCard(c)}
                   disabled={!isMyTurn}
                   playable={isMyTurn && isCardPlayable(c)}
+                  className={isMyTurn && isCardPlayable(c) ? styles.animateCard : ""}
                 />
               ))
             ) : (

@@ -1,36 +1,195 @@
-.gameWrapper,
-.gameWrapper .mainArea,
-.gameWrapper .sidebar,
-.gameWrapper .roundTable,
-.gameWrapper .handSection,
-.gameWrapper .handCardsRow,
-.gameWrapper .centerTable {
+/* =======================
+   GLOBAL SELECTION/CURSOR RESET
+   ======================= */
+
+* {
   user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
   cursor: default;
 }
 
-.gameWrapper input,
-.gameWrapper textarea,
-.gameWrapper input:focus,
-.gameWrapper textarea:focus {
+input, textarea, [contenteditable] {
   user-select: text;
-  -webkit-user-select: text;
-  -moz-user-select: text;
-  -ms-user-select: text;
   cursor: text;
-  outline: auto; 
 }
 
-.gameWrapper button,
-.gameWrapper button:focus {
+button, a, .cardButton {
   cursor: pointer;
+  user-select: none;
 }
 
-.gameWrapper input::selection,
-.gameWrapper textarea::selection {
-  background: #b3d4fc;
-  color: #000;
+.cardButton {
+  min-width: 50px;
+  height: 70px;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.cardButton:hover:not(:disabled) {
+  transform: scale(1.1);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 10px 3px rgba(255,255,255,0.4); }
+  50% { box-shadow: 0 0 18px 6px rgba(255,255,255,0.6); }
+  100% { box-shadow: 0 0 10px 3px rgba(255,255,255,0.4); }
+}
+
+.playable {
+  animation: pulseGlow 1.5s infinite ease-in-out;
+}
+
+.gameWrapper {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  gap: 20px;
+  padding: 20px;
+  box-sizing: border-box;
+  background: #f0f2f5;
+}
+
+.mainArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background-image: url('../assets/Uno.jpeg'); 
+  background-size: cover;
+  background-position: center;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.mainArea::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.25); 
+  z-index: 0;
+}
+
+.roundTable {
+  position: relative;
+  width: 60vmin;
+  height: 60vmin;
+  max-width: 500px;
+  max-height: 500px;
+  border-radius: 50%;
+  border: 2px dashed #ccc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.playerCircle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  min-width: 70px;
+  height: 50px;
+  text-align: center;
+  transform-origin: center;
+  transition: transform 0.4s ease, box-shadow 0.3s;
+  border-radius: 14px;
+  padding: 5px;
+  font-weight: 600;
+  color: #fff;
+  z-index: 2;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+  backdrop-filter: blur(6px);
+  background-color: rgba(50, 50, 50, 0.7);
+}
+
+.playerCircle.currentTurn {
+  box-shadow: 0 0 20px 8px gold;
+  transform: scale(1.15);
+}
+
+.playerCircle.selfPlayer {
+  border: 2px solid #3498db55; 
+  box-shadow: 0 0 10px 3px #3498db33;
+  transform: scale(1.05); 
+}
+
+.playerCircle[data-color="red"] { background: #e74c3c; }
+.playerCircle[data-color="green"] { background: #27ae60; }
+.playerCircle[data-color="yellow"] { background: #f1c40f; color: #333; }
+.playerCircle[data-color="blue"] { background: #3498db; }
+.playerCircle[data-color="purple"] { background: #8e44ad; }
+.playerCircle[data-color="orange"] { background: #e67e22; }
+
+.centerTable {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  z-index: 2;
+}
+
+.handSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.handSection h3 {
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.7); 
+  margin-bottom: 10px;
+}
+
+.handCardsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+
+.noCardsText {
+  font-style: italic;
+  color: #f0f0f0; 
+}
+
+.startButton {
+  margin-top: 16px;
+  padding: 12px 20px;
+  background: #10b981;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.startButton:disabled {
+  background: #6b7280;
+  cursor: not-allowed;
+}
+
+.startButton:not(:disabled):hover {
+  background: #059669;
+  transform: scale(1.05);
 }

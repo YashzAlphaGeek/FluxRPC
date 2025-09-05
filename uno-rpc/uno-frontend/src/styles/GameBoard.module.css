@@ -68,8 +68,8 @@
   z-index: 2;
   box-shadow: 0 3px 8px rgba(0,0,0,0.2);
   backdrop-filter: blur(6px);
-  background-color: rgba(50, 50, 50, 0.7); 
-  user-select: none; 
+  background-color: rgba(50, 50, 50, 0.7);
+  user-select: none;
 }
 
 .playerCircle.currentTurn {
@@ -135,10 +135,23 @@
 }
 
 
+.selfPlayer {
+  border: 2px solid #3498db55; 
+  box-shadow: 0 0 10px 3px #3498db33;
+  transform: scale(1.05); 
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border 0.3s ease;
+}
+
+.currentTurn {
+  transform: scale(1.15);
+  box-shadow: 0 0 20px 8px gold;
+}
+
 .animateCard {
-  transform: scale(1.1);
+  transform: scale(1.05);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   cursor: pointer;
+  animation: pulseGlow 1.5s infinite ease-in-out;
 }
 
 @keyframes pulseGlow {
