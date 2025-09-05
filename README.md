@@ -42,6 +42,8 @@ flowchart TD
 
 The flow of **gRPC** calls in UNO-RPC—Unary (Join Game), Server Streaming (Game State), and BiDi Streaming (Play Card)—through server interceptors in the **Spring Boot** backend services to the clients.
 
+https://github.com/user-attachments/assets/126a7818-4aac-4589-83ea-570bac27f5c2
+
 ```mermaid
 %% UNO-RPC gRPC Call Flow
 
